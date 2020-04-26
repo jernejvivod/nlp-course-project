@@ -127,5 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Generated data
 ./data/cached/*.npy
 *.npy
+
+*.swp
+*.swo
+*.RHistory
