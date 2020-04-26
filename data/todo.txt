@@ -1,0 +1,4 @@
+Pogosti glagoli:
+imaš, imam, ima
+Kolikokrat je kdo z istim imenom odgovoril v zadnjih n-sporočilih.
+
