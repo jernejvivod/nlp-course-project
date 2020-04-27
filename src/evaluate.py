@@ -9,6 +9,7 @@ from sklearn.base import clone
 from sklearn import metrics
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.dummy import DummyClassifier
 
@@ -16,6 +17,7 @@ from imblearn.pipeline import Pipeline
 from imblearn.combine import SMOTETomek
 
 from clf_wrap import ClfWrap
+from feat_stacking_clf import FeatureStackingClf
 
 
 def save_results(kind, accs=None, clf_reports=None, acc_names=None, clf_reports_names=None):
@@ -65,16 +67,12 @@ def evaluate(data, target, clf, eval_method):
 
     # Initialize pipeline template.
     clf_pipeline = Pipeline([('scaling', StandardScaler())])
-    
-    # Initialize classifier.
-    clf_wrapped = ClfWrap(clf)
-    clf_wrapped.name = clf.name
-    
+
     # Add classifier to pipeline.
     clf_eval = clone(clf_pipeline)
     clf_eval.steps.append(['smt', SMOTETomek()])
-    clf_eval.steps.append(['clf', clf_wrapped])
-
+    clf_eval.steps.append(['clf', clf])
+    
     # Initialize baseline classifiers.
     clf_baseline_majority = clone(clf_pipeline)
     clf_baseline_majority.steps.append(['clf', DummyClassifier(strategy='most_frequent')])
@@ -137,7 +135,7 @@ def evaluate(data, target, clf, eval_method):
         # If performing cross-validation.
 
         # Set number of splits
-        N_SPLITS = 5
+        N_SPLITS = 10
 
         # Initialize score accumulators.
         score_cv_eval = 0
@@ -185,9 +183,8 @@ def plot_roc(data, target, clf):
         clf (obj): Classification model to evaluate
     """
     
-    # Initialize classifier and pipeline.
-    clf_wrapped = ClfWrap(clf, predict_proba=True)
-    clf_eval = Pipeline([('scaling', StandardScaler()), ('clf', clf_wrapped)])
+    # Initialize pipeline.
+    clf_eval = Pipeline([('scaling', StandardScaler()), ('clf', clf)])
 
     # Get training and test data.
     data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False, test_size=0.1)
@@ -258,23 +255,39 @@ def confusion_matrix(data, target, clf, class_names, title, cm_save_path):
     plt.close()
 
 
-def repl_eval(data, target, clf):
+def decompose_feature_subs_lengths(feature_subset_lenghts, lim, decomp_len):
+    """
+    Decompose long feature subsets into shorter partitions.
+
+    Args:
+        feature_subset_lenghts (list): List of original feature subset lengths
+        lim (int): Maximum feature subset length
+        decomp_len (int): Partition size
+
+    Returns:
+        (list): List of updated feature subset lengths
+    """
     
-    # Initialize classifier.
-    clf_wrapped = ClfWrap(clf)
+    # Copy list of feature subset lengths.
+    feature_subset_lenghts_copy = list(feature_subset_lenghts.copy())
 
-    import pdb
-    pdb.set_trace()
+    # Go over feature subset lengths.
+    for idx, l in enumerate(feature_subset_lenghts_copy):
 
-    # Initialize pipeline template.
-    clf_pipeline = Pipeline([('scaling', StandardScaler()), ('clf', clf_wrapped)])
-    clf_pipeline.fit(data, target)
+        # If next feature subset length over limit, decompose.
+        if l > lim:
+            num_rep = l // decomp_len
+            rem = l % decomp_len
+            add = num_rep * [decomp_len]
+            if rem > 0:
+                add += [rem]
+            
+            # Change previous value for decomposed value.
+            feature_subset_lenghts_copy.pop(idx)
+            feature_subset_lenghts_copy[idx:idx] = add
 
-    predictions = np.empty(0, dtype=int)
-    while True:
-        message = input()
-    
-
+    # Return updated feature subset lengths.
+    return feature_subset_lenghts_copy
 
 
 if __name__ == '__main__':
@@ -282,9 +295,9 @@ if __name__ == '__main__':
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, choices=['rf', 'svm'], default='rf')
+    parser.add_argument('--method', type=str, choices=['rf', 'svm', 'stacking'], default='rf')
     parser.add_argument('--eval-method', type=str, choices=['tts', 'cv'], default='tts')
-    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl'], default='eval')
+    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm'], default='eval')
     args = parser.parse_args()
     
     # Load data.
@@ -294,17 +307,23 @@ if __name__ == '__main__':
     # Perform evaluations.
     if args.method == 'rf':
         clf = RandomForestClassifier(n_estimators=100)
+        clf = ClfWrap(clf)
         clf.name = 'rf'
     elif args.method == 'svm':
         clf = SVC(gamma='auto', probability=True)
+        clf = ClfWrap(clf)
         clf.name = 'SVM'
-    
+    elif args.method == 'stacking':
+        feature_subset_lengths = np.load('../data/cached/target_book_feature_subset_lengths.npy')
+
+        # Decompose long feature subsets.
+        feature_subset_lengths_dec = decompose_feature_subs_lengths(feature_subset_lengths, 100, 300)
+        clf = FeatureStackingClf(subset_lengths = feature_subset_lengths_dec)
+        clf.name = 'stacking'
     if args.action == 'eval':
         evaluate(data, target, clf, args.eval_method)
     elif args.action == 'roc':
         plot_roc(data, target, clf)
     elif args.action == 'cm':
         confusion_matrix(data, target, clf, ['No', 'Yes'], 'Random Forest', '../results/plots/cfm.png')
-    elif args.action == 'repl':
-        repl_eval(data, target, clf)
  

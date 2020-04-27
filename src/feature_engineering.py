@@ -185,7 +185,7 @@ def num_curse_words(message, curse_words):
             patt = re.compile(' ' + curse_word + ' |' + curse_word + ' ' + '| ' + curse_word)
         if patt.search(unidecode.unidecode(message).lower()):
             count += 1
-    return np.array(count)
+    return np.array([count])
 
 
 def num_given_names(message, given_names):
@@ -213,7 +213,7 @@ def num_given_names(message, given_names):
             patt = re.compile('\b' + name + '\b')
         if patt.search(unidecode.unidecode(message).lower()):
             count += 1
-    return np.array(count)
+    return np.array([count])
 
 
 def num_chat_names(message, chat_names):
@@ -241,7 +241,7 @@ def num_chat_names(message, chat_names):
             patt = re.compile(' ' + name + ' |' + name + ' ' + '| ' + name)
         if patt.search(unidecode.unidecode(message).lower()):
             count += 1
-    return np.array(count)
+    return np.array([count])
 
 
 def num_story_names(message, story_names):
@@ -269,7 +269,7 @@ def num_story_names(message, story_names):
             patt = re.compile(' ' + name + ' |' + name + ' ' + '| ' + name)
         if patt.search(unidecode.unidecode(message).lower()):
             count += 1
-    return np.array(count)
+    return np.array([count])
 
 
 def num_repeated_letters(message):
@@ -288,7 +288,7 @@ def num_repeated_letters(message):
     for idx in range(len(message)-1):
         if message[idx].lower() == message[idx+1].lower():
             count += 1
-    return np.array(count)
+    return np.array([count])
 
 
 def num_clues(message, clue_words):
@@ -316,7 +316,7 @@ def num_clues(message, clue_words):
             patt = re.compile(' ' + word + ' |' + word + ' ' + '| ' + word)
         if patt.search(unidecode.unidecode(message).lower()):
             count += 1
-    return np.array(count)
+    return np.array([count])
 
 
 def get_general_features(message):
@@ -376,7 +376,7 @@ def construct_features(data_path, category):
 
     # If computing features for book relevance prediction.
     if category == 'book-relevance':
-
+        
         # Get data.
         data_category = data['book-relevance']
         messages_list = data_category['x'].values.astype(str)
@@ -395,6 +395,10 @@ def construct_features(data_path, category):
         
         # Get list for storing POS tagged messages (simplified).
         messages_pos = []
+        
+        # Set flag for getting feature subset lengths using first message.
+        get_feature_subset_lengths = True
+        feature_subset_lengths = None
 
         # Go over messages.
         for idx, message in enumerate(messages_list):
@@ -418,6 +422,12 @@ def construct_features(data_path, category):
 
             # Construct features vector.
             feat_vec = np.hstack((general_features, curse_words, repeated_letters, clue_words, given_names, chat_names, story_names, bow_features))
+            
+            # If getting feature subset lengths (first message).
+            if get_feature_subset_lengths:
+                feature_subset_lengths = [len(general_features), len(curse_words) + len(repeated_letters) +\
+                        len(clue_words) + len(given_names) + len(chat_names) + len(story_names), len(bow_features)]
+                get_feature_subset_lengths = False
 
             # Add to matrix of features.
             if first:
@@ -431,15 +441,20 @@ def construct_features(data_path, category):
         vectorizer1 = CountVectorizer(min_df=2, ngram_range=(2, 2))
         bigram_count = vectorizer1.fit_transform(messages_list).toarray()
         data_mat_res = np.hstack((data_mat_res, bigram_count))
+        feature_subset_lengths.append(bigram_count.shape[1])
         
         # Get tf-idf results for POS tags (simplified).
         vectorizer2 = TfidfVectorizer()
         pos_tfidf = vectorizer2.fit_transform(messages_pos).toarray()
         data_mat_res = np.hstack((data_mat_res, pos_tfidf))
-        
+        feature_subset_lengths.append(pos_tfidf.shape[1])
+
         # Save matrix of features and vector of target variables.
         np.save('../data/cached/data_book_relevance.npy', data_mat_res)
         np.save('../data/cached/target_book_relevance.npy', target_vals)
+
+        # Save feature subset lengths.
+        np.save('../data/cached/target_book_feature_subset_lengths.npy', feature_subset_lengths)
     elif category == 'type':
         # TODO
         pass
