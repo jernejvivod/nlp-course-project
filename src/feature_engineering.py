@@ -361,12 +361,80 @@ def get_general_features(message):
     return res_vec
 
 
-def construct_features(data_path, category):
+def get_repl_processor():
+    """
+    Get function for extracting features from messages for use in REPL.
+
+    Returns:
+        (function): Function that takes a message and constructs its features.
+    """
+    
+    # Parse vectorizers and bag-of-words list.
+    with open('../data/cached/repl/count_vectorizer.p', 'rb') as f1, \
+            open('../data/cached/repl/pos_tfidf_vectorizer.p', 'rb') as f2, \
+            open('../data/cached/repl/bow.p', 'rb') as f3:
+        vectorizer1 = pickle.load(f1)
+        vectorizer2 = pickle.load(f2)
+        bow = pickle.load(f3)
+    
+    # Parse data dictionary.
+    with open('../data/data-processed/data.pkl', 'rb') as f:
+        data = pickle.load(f)
+    
+    # Load dictionary for non-standard Slovene.
+    with open('../data/slo_nstd_dict.p', 'rb') as f:
+        slo_nstd_dict = pickle.load(f)
+
+
+    def message_features(message):
+        """
+        Construct message features (for use in REPL).
+        
+        Args:
+            message (str): Message for which to construct the features
+
+        Returns:
+            (numpy.ndarray): Resulting feature vector.
+
+        """
+
+        # Decode unicode and fix missing spaces after punctuation.
+        message = re.sub(r'(?<=[.,])(?=[^\s])', r' ', message)
+
+        # Compute message features.
+        general_features = get_general_features(message)
+        curse_words = num_curse_words(message, data['curse-words'])
+        repeated_letters = num_repeated_letters(message)
+        clue_words = num_clues(message, data['clue-words'])
+        given_names = num_given_names(message, data['names'])
+        chat_names = num_chat_names(message, data['chat-names'])
+        story_names = num_story_names(message, data['story-names'])
+        bow_features = eval_bow(message, bow)
+        
+        # Compute (simplified) POS tags.
+        pos_tags = get_pos_simple(message, slo_nstd_dict)
+        
+        # Compute bigram counts and pos tags tf-idf scores.
+        bigram_count = vectorizer1.transform([message]).toarray()[0]
+        pos_tfidf = vectorizer2.transform([message]).toarray()[0]
+
+        # Construct features vector.
+        feat_vec = np.hstack((general_features, curse_words, repeated_letters, clue_words, 
+            given_names, chat_names, story_names, bow_features, bigram_count, pos_tfidf))
+        
+        # Return constructed feature.
+        return feat_vec
+    
+    # Return function for creating features.
+    return message_features
+
+
+def construct_features(data, category):
     """
     Extract various features from messages.
 
     Args:
-        data (): Dictionary representing the preprocessed dataset.
+        data (dict): Dictionary representing the preprocessed dataset.
         category (str): Specification of the type of prediction being made.
         Valid values are 'book-relevance', 'type', 'category' and 'category-broad'
     
@@ -392,6 +460,10 @@ def construct_features(data_path, category):
         
         # Get bag-of-words list.
         bow = get_bow(data['book-relevance']['x'].values.astype(str))
+
+        # Save bag-of-words list.
+        with open('../data/cached/repl/bow.p', 'wb') as f:
+            pickle.dump(bow, f, pickle.HIGHEST_PROTOCOL)
         
         # Get list for storing POS tagged messages (simplified).
         messages_pos = []
@@ -442,12 +514,16 @@ def construct_features(data_path, category):
         bigram_count = vectorizer1.fit_transform(messages_list).toarray()
         data_mat_res = np.hstack((data_mat_res, bigram_count))
         feature_subset_lengths.append(bigram_count.shape[1])
+        with open('../data/cached/repl/count_vectorizer.p', 'wb') as f:
+            pickle.dump(vectorizer1, f, pickle.HIGHEST_PROTOCOL)
         
         # Get tf-idf results for POS tags (simplified).
         vectorizer2 = TfidfVectorizer()
         pos_tfidf = vectorizer2.fit_transform(messages_pos).toarray()
         data_mat_res = np.hstack((data_mat_res, pos_tfidf))
         feature_subset_lengths.append(pos_tfidf.shape[1])
+        with open('../data/cached/repl/pos_tfidf_vectorizer.p', 'wb') as f:
+            pickle.dump(vectorizer2, f, pickle.HIGHEST_PROTOCOL)
 
         # Save matrix of features and vector of target variables.
         np.save('../data/cached/data_book_relevance.npy', data_mat_res)

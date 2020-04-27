@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import pandas as pd
+from termcolor import colored
 
 from sklearn.model_selection import KFold, train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
@@ -18,6 +19,7 @@ from imblearn.combine import SMOTETomek
 
 from clf_wrap import ClfWrap
 from feat_stacking_clf import FeatureStackingClf
+from feature_engineering import get_repl_processor
 
 
 def save_results(kind, accs=None, clf_reports=None, acc_names=None, clf_reports_names=None):
@@ -290,6 +292,23 @@ def decompose_feature_subs_lengths(feature_subset_lenghts, lim, decomp_len):
     return feature_subset_lenghts_copy
 
 
+def repl(clf, data_train, target_train):
+
+    hist = np.array([])
+    
+    clf.fit(data_train, target_train)
+
+    proc = get_repl_processor()
+
+    while True:
+        message = input('message: ')
+        feat = proc(message)[np.newaxis]
+        hist = np.vstack([hist, feat]) if hist.size else feat
+        res = clf.predict_proba(hist)[-1]
+        print(colored('P(NO)={0}'.format(res[0], end=''), 'red'))
+        print(colored('P(YES)={0}'.format(res[1]), 'green'))
+
+
 if __name__ == '__main__':
     import argparse
 
@@ -297,7 +316,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--method', type=str, choices=['rf', 'svm', 'stacking'], default='rf')
     parser.add_argument('--eval-method', type=str, choices=['tts', 'cv'], default='tts')
-    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm'], default='eval')
+    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl'], default='eval')
     args = parser.parse_args()
     
     # Load data.
@@ -326,4 +345,6 @@ if __name__ == '__main__':
         plot_roc(data, target, clf)
     elif args.action == 'cm':
         confusion_matrix(data, target, clf, ['No', 'Yes'], 'Random Forest', '../results/plots/cfm.png')
+    elif args.action == 'repl':
+        repl(clf, data, target)
  

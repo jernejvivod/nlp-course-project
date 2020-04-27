@@ -6,7 +6,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 class FeatureStackingClf(BaseEstimator, ClassifierMixin):
-
     """
     Feature stacking classifier as described in TODO.
     
@@ -21,7 +20,6 @@ class FeatureStackingClf(BaseEstimator, ClassifierMixin):
         l0_clf (obj): TODO
         l1_clf (obj): TODO
         cv_num_folds (int): TODO
-
     """
 
 
@@ -77,7 +75,7 @@ class FeatureStackingClf(BaseEstimator, ClassifierMixin):
         pred_subs_all = []
         
         # Go over subsets and get features using cross-validation.
-        for subset, clf in zip(data_subsets_train, l0_clfs):
+        for subset in data_subsets_train:
             pred_subs = np.empty((0, num_classes), dtype=int)
             for train_index, test_index in KFold(self.cv_num_folds).split(subset, y):
                 pred_nxt = self.l0_clf().fit(subset[train_index, :], y[train_index]).predict_proba(subset[test_index])
@@ -93,6 +91,7 @@ class FeatureStackingClf(BaseEstimator, ClassifierMixin):
         # Return reference to self.
         return self
 
+  
     def predict(self, X, y=None):
         """
         Predict labels of new data.
@@ -108,6 +107,23 @@ class FeatureStackingClf(BaseEstimator, ClassifierMixin):
         l0_encoded = np.hstack([clf.predict_proba(subset) for subset, clf in zip(data_subsets_predict, self.encoding_l0)])
 
         return self.trained_l1.predict(l0_encoded)
+    
+   
+    def predict_proba(self, X, y=None):
+        """
+        Predict labels of new data (return probabilities).
+        
+        Args:
+            X (numpy.ndarray): Data for which to predict classes
+
+        Returns:
+            (numpy.ndarray): Predicted label probabilities
+        """
+        
+        data_subsets_predict = self._create_subsets(X, self.subset_lengths)
+        l0_encoded = np.hstack([clf.predict_proba(subset) for subset, clf in zip(data_subsets_predict, self.encoding_l0)])
+
+        return self.trained_l1.predict_proba(l0_encoded)
 
 
     def score(self, X, y, sample_weight=None):
