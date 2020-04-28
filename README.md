@@ -108,9 +108,10 @@ probabilities of messages being relevant to discussed books or not.
 
 # Preliminary Results
 
-We started by trying to predict the relevance of messages to the actual books being discussed. We used a train-test split as well as 10-fold cross validation 
-to evaluate the predictions of our models. The table below shows the obtained results for the random-forest, SVM and feature stacking models as well as for baseline
-majority and uniformly random classifiers.
+We started by trying to predict the relevance of messages to the actual books being discussed. We used a train-test split as well as 10-fold cross-validation to 
+evaluate the predictions of our models. The table below shows the obtained results for the random-forest, SVM, and feature stacking models as well as for baseline
+majority and uniformly random classifiers. We used resampling to help balance the classes in the training data as tests showed this improves the results slightly.
+
 
 | model               | accuracy (tts) | accuracy (cv) | precission            | recall                | f1-score              | support             |
 |---------------------|----------------|---------------|-----------------------|-----------------------|-----------------------|---------------------|
