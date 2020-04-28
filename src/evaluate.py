@@ -293,20 +293,41 @@ def decompose_feature_subs_lengths(feature_subset_lenghts, lim, decomp_len):
 
 
 def repl(clf, data_train, target_train):
+    """
+    Initialize and run REPL performance test.
 
+    Args:
+        clf (object): Classifier to use in REPL
+        data_train (numpy.ndarray): Training data samples
+        target_train (numpy.ndarray): Training data labels
+    """
+    
+    # Initialize array for storing previous messages' features.
     hist = np.array([])
     
+    # Train classifier using training data.
     clf.fit(data_train, target_train)
-
+    
+    # Get REPL processor (for converting messages to features).
     proc = get_repl_processor()
+    
+    # Parse initial message.
+    print("### REPL evaluation ###")
+    print("Type 'quit' to exit the REPL.")
+    message = input('message: ')
+    while message != 'quit':
 
-    while True:
-        message = input('message: ')
+        # Get features from message, add features to history.
         feat = proc(message)[np.newaxis]
         hist = np.vstack([hist, feat]) if hist.size else feat
+
+        # Predict. The last prediction corresponds to the current message.
         res = clf.predict_proba(hist)[-1]
+
+        # Print class probabilities.
         print(colored('P(NO)={0}'.format(res[0], end=''), 'red'))
         print(colored('P(YES)={0}'.format(res[1]), 'green'))
+        message = input('message: ')
 
 
 if __name__ == '__main__':
@@ -323,7 +344,7 @@ if __name__ == '__main__':
     data = np.load('../data/cached/data_book_relevance.npy')
     target = np.load('../data/cached/target_book_relevance.npy')
 
-    # Perform evaluations.
+    # Select classifier.
     if args.method == 'rf':
         clf = RandomForestClassifier(n_estimators=100)
         clf = ClfWrap(clf)
@@ -339,6 +360,8 @@ if __name__ == '__main__':
         feature_subset_lengths_dec = decompose_feature_subs_lengths(feature_subset_lengths, 100, 300)
         clf = FeatureStackingClf(subset_lengths = feature_subset_lengths_dec)
         clf.name = 'stacking'
+    
+    # Select action.
     if args.action == 'eval':
         evaluate(data, target, clf, args.eval_method)
     elif args.action == 'roc':
