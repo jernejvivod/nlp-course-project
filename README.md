@@ -54,13 +54,16 @@ The processed messages are stored in the *data/cached/* directory and are retrie
 
 We use several classification algorithms to make predictions. A notable algorithm is the so-called Feature stacking
 approach which combines several classifiers each trained on a feature subset and a final classifier that takes as its input
-the output of these classifiers. The authors of the paper describing the Feature stacking approach suggest using logistic regression
+the output of these classifiers. The authors of the paper [[1]](#1) describing the Feature stacking approach suggest using logistic regression
 as the feature classification method since it makes the method resemble a neural network structure. We use an SVM as the final classifier.
 
 During training, the training data is converted to new features consisting of logistic regression outputs for each feature subset. This is achieved
 using k-fold cross-validation. Next, logistic regression is fitted to the entire training data feature subsets and is used to encode the test data.
 A final meta-classifier is fitted to the training data encoded using logistic regression. Test data is first encoded using a trained logistic
 regression model and finally classified with the meta-classifier. The feature stacking method is implemented in the *feat\_stacking\_clf.py* file.
+The features stacking method is contrasted with the more typical feature concatenation method on the diagram below taken from [[1]](#1).
+
+![alt text](./reports/img/feature_stacking.png "Feature Stacking Method")
 
 ## Combining Classifiers with a Markov Model and Conditional Probabilities
 
@@ -106,5 +109,8 @@ probabilities of messages being relevant to discussed books or not.
 # Preliminary Results
 
 
-
+# References
+<a id="1">[1]</a> 
+Lui, M. (2012). Feature Stacking for Sentence Classification in Evidence-Based Medicine. 
+In Proceedings of the Australasian Language Technology Association Workshop 2012 (pp. 134–138).
 
