@@ -196,7 +196,10 @@ def plot_roc(data, target, clf):
     data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False, test_size=0.1)
 
     # Evaluate classifier to get probabilities.
-    scores = clf_eval.fit(data_train, target_train).predict(data_test)
+    scores = clf_eval.fit(data_train, target_train).predict_proba(data_test)
+
+    import pdb
+    pdb.set_trace()
     
     # Get false positive rates, true positive rates and thresholds.
     fpr, tpr, thresholds = metrics.roc_curve(target_test, scores[:, 1], pos_label=1)
@@ -235,8 +238,7 @@ def confusion_matrix(data, target, clf, class_names, title, cm_save_path):
     """
 
     # Initialize random forest classifier, apply wrapper and add to pipeline.
-    clf_wrapped = ClfWrap(clf)
-    clf_eval = Pipeline([('scaling', StandardScaler()), ('clf', clf_wrapped)])
+    clf_eval = Pipeline([('scaling', StandardScaler()), ('clf', clf)])
 
     # Split data into training and test sets.
     data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False)
@@ -371,7 +373,7 @@ if __name__ == '__main__':
     elif args.action == 'roc':
         plot_roc(data, target, clf)
     elif args.action == 'cm':
-        confusion_matrix(data, target, clf, ['No', 'Yes'], 'Random Forest', '../results/plots/cfm.png')
+        confusion_matrix(data, target, clf, ['No', 'Yes'], 'Feature Stacking', '../results/plots/cfm.png')
     elif args.action == 'repl':
         repl(clf, data, target)
  

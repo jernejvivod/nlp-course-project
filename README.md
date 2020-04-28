@@ -120,6 +120,19 @@ majority and uniformly random classifiers.
 | baseline (majority) | 0.3634         | 0.6085        | 0.36 (no), 0.00 (yes) | 1.00 (no), 0.00 (yes) | 0.53 (no), 0.00 (yes) | 226 (no), 129 (yes) |
 | baseline (uniform)  | 0.4873         | 0.4993        | 0.34 (no), 0.61 (yes) | 0.48 (no), 0.64 (yes) | 0.40 (no), 0.53 (yes) | 226 (no), 129 (yes) |
 
+The figure below shows the confusion matrix obtained using the Feature stacking method evaluated using a train-test split. The false negatives
+and positives can be found in the *results* folder in the *fn.xlsx* and *fp.xlsx* files respectively. We can see that short messages, the relevance of
+which is extremely ambiguous when taken out of context, make up the majority of the false negatives.
+
+![alt text](./reports/img/cfm_stacking "REPL Session")
+
+The figure below shows the ROC curve obtained using the Feature stacking method evaluated using a train-test split.
+
+![alt text](./reports/img/roc_stacking.png "REPL Session")
+
+## Future Work
+
+The results described here represent are only preliminary and will be regularly updated in the next weeks.
 
 # References
 <a id="1">[1]</a> 

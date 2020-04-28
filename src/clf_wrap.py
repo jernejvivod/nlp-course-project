@@ -70,12 +70,51 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
         Returns:
             (numpy.ndarray): Predicted labels
         """
+        
+        # Initialize array for predictions.
+        predictions = np.empty(X.shape[0], dtype=int)
+        
+        # Go over samples.
+        for idx, sample in enumerate(X):
+            
+            # Predict probability for next sample using classification algorithm.
+            pred_clf = self.clf.predict_proba(sample.reshape(1, -1))[0]
+            
+            if idx > 0:
+                # If not first sample, use make prediction using Markov model.
+                pred_markov_mod = self.markov_mod[predictions[idx-1]]
+
+                if idx >= self.n_look_back:
+                    # If sample index large enough to use conditional probabilities,
+                    # use computed conditional probabilities to make prediction.
+                    patt = predictions[idx-self.n_look_back:idx]
+                    pred_cond_prob = self.cond_prob[str(patt)]
+
+                    # Combine predictions of classifier, Markov model and conditional probabilities.
+                    pred_comb = (1-self.alpha-self.beta)*pred_clf + self.alpha*pred_markov_mod + self.beta*pred_cond_prob
+                else:
+                    pred_comb = (1-self.alpha)*pred_clf + self.alpha*pred_markov_mod
+            else:
+                # Set prediction as most probable class.
+                predictions[idx] = np.argmax(pred_clf)
+        
+        # Return array of predictions.
+        return predictions
+    
+    
+    def predict_proba(self, X, y=None):
+        """
+        Predict probabilities of labels of new data.
+
+        Args:
+            X (numpy.ndarray): Data for which to predict class probabilities.
+
+        Returns:
+            (numpy.ndarray): Predicted labels
+        """
 
         # Initialize predictions array.
-        if self.predict_proba:
-            predictions = np.empty((X.shape[0], self.num_classes), dtype=float)
-        else:
-            predictions = np.empty(X.shape[0], dtype=int)
+        predictions = np.empty((X.shape[0], self.num_classes), dtype=float)
         
         # Go over samples.
         for idx, sample in enumerate(X):
@@ -85,20 +124,13 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
             
             if idx > 0:
                 # If not first sample, use make prediction using Markov model.
-                if self.predict_proba:
-                    pred_markov_mod = self.markov_mod[np.argmax(predictions[idx-1])]
-                else:
-                    pred_markov_mod = self.markov_mod[predictions[idx-1]]
+                pred_markov_mod = self.markov_mod[np.argmax(predictions[idx-1])]
 
                 if idx >= self.n_look_back:
                     # If sample index large enough to use conditional probabilities,
                     # use computed conditional probabilities to make prediction.
-                    if self.predict_proba:
-                        patt = predictions[idx-self.n_look_back:idx]
-                        pred_cond_prob = self.cond_prob[str(np.argmax(patt, axis=1))]
-                    else:
-                        patt = predictions[idx-self.n_look_back:idx]
-                        pred_cond_prob = self.cond_prob[str(patt)]
+                    patt = predictions[idx-self.n_look_back:idx]
+                    pred_cond_prob = self.cond_prob[str(np.argmax(patt, axis=1))]
 
                     # Combine predictions of classifier, Markov model and conditional probabilities.
                     pred_comb = (1-self.alpha-self.beta)*pred_clf + self.alpha*pred_markov_mod + self.beta*pred_cond_prob
@@ -107,13 +139,13 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
             else:
                 pred_comb = pred_clf
             
-            if self.predict_proba:
-                predictions[idx, :] = pred_comb
-            else:
-                predictions[idx] = int(pred_comb[1] > self.thresh)
-
+            # Add computed probabilities to array of predictions.
+            predictions[idx, :] = pred_comb
+        
+        # Return array of predictions.
         return predictions
-    
+   
+
     def score(self, X, y, sample_weight=None):
         """
         Score predictions on training data.
