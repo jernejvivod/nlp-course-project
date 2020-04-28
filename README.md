@@ -109,15 +109,16 @@ probabilities of messages being relevant to discussed books or not.
 # Preliminary Results
 
 We started by trying to predict the relevance of messages to the actual books being discussed. We used a train-test split as well as 10-fold cross validation 
-to evaluate the predictions of our models. The table below shows the obtained results.
+to evaluate the predictions of our models. The table below shows the obtained results for the random-forest, SVM and feature stacking models as well as for baseline
+majority and uniformly random classifiers.
 
-| model               | accuracy (tts) | accuracy (cv) | precission           | recall                | f1-score              | support             |
-|---------------------|----------------|---------------|----------------------|-----------------------|-----------------------|---------------------|
-| rf                  | 0.8281         |               | 0.76 (yes), 0.87(no) | 0.78 (yes), 0.86 (no) | 0.77 (yes), 0.86 (no) | 192 (yes), 226 (no) |
-| svm                 |                |               |                      |                       |                       |                     |
-| stacking            |                |               |                      |                       |                       |                     |
-| baseline (majority) |                |               |                      |                       |                       |                     |
-| baseline (uniform)  |                |               |                      |                       |                       |                     |
+| model               | accuracy (tts) | accuracy (cv) | precission            | recall                | f1-score              | support             |
+|---------------------|----------------|---------------|-----------------------|-----------------------|-----------------------|---------------------|
+| rf                  | 0.8281         | 0.8347        | 0.76 (no), 0.87 (yes) | 0.78 (no), 0.86 (yes) | 0.77 (no), 0.86 (yes) | 226 (no), 129 (yes) |
+| svm                 | 0.8169         | 0.8362        | 0.73 (no), 0.85 (yes) | 0.74 (no), 0.84 (yes) | 0.73 (no), 0.84 (yes) | 226 (no), 129 (yes) |
+| stacking            | 0.8479         | 0.8296        | 0.82 (no), 0.86 (yes) | 0.75 (no), 0.90 (yes) | 0.78 (no), 0.88 (yes) | 226 (no), 129 (yes) |
+| baseline (majority) | 0.3634         | 0.6085        | 0.36 (no), 0.00 (yes) | 1.00 (no), 0.00 (yes) | 0.53 (no), 0.00 (yes) | 226 (no), 129 (yes) |
+| baseline (uniform)  | 0.4873         | 0.4993        | 0.34 (no), 0.61 (yes) | 0.48 (no), 0.64 (yes) | 0.40 (no), 0.53 (yes) | 226 (no), 129 (yes) |
 
 
 # References

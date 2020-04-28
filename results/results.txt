@@ -835,3 +835,204 @@ Uniform classifier:               precision    recall  f1-score   support
    macro avg       0.57      0.57      0.55       355
 weighted avg       0.60      0.56      0.57       355
 
+##########
+Date: 28/04/2020 16:41:16
+##########
+
+Evaluation method: tts
+SVM: 0.8028169014084507
+Uniform classifier: 0.49295774647887325
+Majority classifier: 0.36338028169014086
+SVM:               precision    recall  f1-score   support
+
+         Yes       0.73      0.74      0.73       129
+          No       0.85      0.84      0.84       226
+
+    accuracy                           0.80       355
+   macro avg       0.79      0.79      0.79       355
+weighted avg       0.80      0.80      0.80       355
+Uniform classifier:               precision    recall  f1-score   support
+
+         Yes       0.31      0.44      0.37       129
+          No       0.59      0.45      0.51       226
+
+    accuracy                           0.45       355
+   macro avg       0.45      0.45      0.44       355
+weighted avg       0.49      0.45      0.46       355
+
+##########
+Date: 28/04/2020 16:42:47
+##########
+
+Evaluation method: tts
+stacking: 0.8169014084507042
+Uniform classifier: 0.4619718309859155
+Majority classifier: 0.36338028169014086
+stacking:               precision    recall  f1-score   support
+
+         Yes       0.78      0.69      0.73       129
+          No       0.83      0.89      0.86       226
+
+    accuracy                           0.82       355
+   macro avg       0.81      0.79      0.80       355
+weighted avg       0.81      0.82      0.81       355
+Uniform classifier:               precision    recall  f1-score   support
+
+         Yes       0.41      0.57      0.47       129
+          No       0.68      0.53      0.59       226
+
+    accuracy                           0.54       355
+   macro avg       0.54      0.55      0.53       355
+weighted avg       0.58      0.54      0.55       355
+
+##########
+Date: 28/04/2020 16:51:05
+##########
+
+Evaluation method: tts
+stacking: 0.847887323943662
+Uniform classifier: 0.5211267605633803
+Majority classifier: 0.36338028169014086
+stacking:               precision    recall  f1-score   support
+
+         Yes       0.82      0.75      0.78       129
+          No       0.86      0.90      0.88       226
+
+    accuracy                           0.85       355
+   macro avg       0.84      0.83      0.83       355
+weighted avg       0.85      0.85      0.85       355
+Uniform classifier:               precision    recall  f1-score   support
+
+         Yes       0.34      0.48      0.40       129
+          No       0.61      0.46      0.53       226
+
+    accuracy                           0.47       355
+   macro avg       0.47      0.47      0.46       355
+weighted avg       0.51      0.47      0.48       355
+
+##########
+Date: 28/04/2020 16:51:11
+##########
+
+Evaluation method: cv
+rf: 0.8347855494549217
+Uniform classifier: 0.4992902045038593
+Majority classifier: 0.6085469881435507
+
+##########
+Date: 28/04/2020 17:38:17
+##########
+
+Evaluation method: tts
+stacking: 0.8309859154929577
+Uniform classifier: 0.4450704225352113
+Majority classifier: 0.36338028169014086
+stacking:               precision    recall  f1-score   support
+
+         Yes       0.81      0.71      0.75       129
+          No       0.84      0.90      0.87       226
+
+    accuracy                           0.83       355
+   macro avg       0.82      0.80      0.81       355
+weighted avg       0.83      0.83      0.83       355
+Uniform classifier:               precision    recall  f1-score   support
+
+         Yes       0.36      1.00      0.53       129
+          No       0.00      0.00      0.00       226
+
+    accuracy                           0.36       355
+   macro avg       0.18      0.50      0.27       355
+weighted avg       0.13      0.36      0.19       355
+Majority classifier:               precision    recall  f1-score   support
+
+         Yes       0.38      0.53      0.44       129
+          No       0.66      0.51      0.58       226
+
+    accuracy                           0.52       355
+   macro avg       0.52      0.52      0.51       355
+weighted avg       0.56      0.52      0.53       355
+
+##########
+Date: 28/04/2020 18:08:58
+##########
+
+Evaluation method: tts
+stacking: 0.8619718309859155
+Uniform classifier: 0.504225352112676
+Majority classifier: 0.36338028169014086
+stacking:               precision    recall  f1-score   support
+
+          No       0.83      0.78      0.80       129
+         Yes       0.88      0.91      0.89       226
+
+    accuracy                           0.86       355
+   macro avg       0.85      0.84      0.85       355
+weighted avg       0.86      0.86      0.86       355
+Uniform classifier:               precision    recall  f1-score   support
+
+          No       0.35      0.53      0.42       129
+         Yes       0.62      0.43      0.51       226
+
+    accuracy                           0.47       355
+   macro avg       0.49      0.48      0.47       355
+weighted avg       0.52      0.47      0.48       355
+Majority classifier:               precision    recall  f1-score   support
+
+          No       0.36      1.00      0.53       129
+         Yes       0.00      0.00      0.00       226
+
+    accuracy                           0.36       355
+   macro avg       0.18      0.50      0.27       355
+weighted avg       0.13      0.36      0.19       355
+
+##########
+Date: 28/04/2020 18:22:27
+##########
+
+Evaluation method: tts
+stacking: 0.828169014084507
+Uniform classifier: 0.504225352112676
+Majority classifier: 0.36338028169014086
+stacking:               precision    recall  f1-score   support
+
+          No       0.80      0.71      0.75       129
+         Yes       0.84      0.90      0.87       226
+
+    accuracy                           0.83       355
+   macro avg       0.82      0.80      0.81       355
+weighted avg       0.83      0.83      0.83       355
+Uniform classifier:               precision    recall  f1-score   support
+
+          No       0.36      0.46      0.40       129
+         Yes       0.63      0.53      0.57       226
+
+    accuracy                           0.50       355
+   macro avg       0.49      0.49      0.49       355
+weighted avg       0.53      0.50      0.51       355
+Majority classifier:               precision    recall  f1-score   support
+
+          No       0.36      1.00      0.53       129
+         Yes       0.00      0.00      0.00       226
+
+    accuracy                           0.36       355
+   macro avg       0.18      0.50      0.27       355
+weighted avg       0.13      0.36      0.19       355
+
+##########
+Date: 28/04/2020 18:26:17
+##########
+
+Evaluation method: cv
+stacking: 0.8296960292830429
+Uniform classifier: 0.5165242301265219
+Majority classifier: 0.6085469881435507
+
+##########
+Date: 28/04/2020 18:59:39
+##########
+
+Evaluation method: cv
+SVM: 0.8361876342802578
+Uniform classifier: 0.5103151110050131
+Majority classifier: 0.6085469881435507
+

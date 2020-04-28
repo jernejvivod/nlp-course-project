@@ -48,7 +48,7 @@ def save_results(kind, accs=None, clf_reports=None, acc_names=None, clf_reports_
         if clf_reports:
             for idx, clf_report in enumerate(clf_reports):
                 if clf_reports_names:
-                    f.write(clf_reports_names[idx] + ': ')
+                    f.write(clf_reports_names[idx] + ': \n')
                 f.write(clf_report)
         f.write('\n')
 
@@ -119,18 +119,22 @@ def evaluate(data, target, clf, eval_method):
         res_baseline_strat = clf_baseline_strat.fit(data_train, target_train).score(data_test, target_test)
         res_baseline_prior = clf_baseline_prior.fit(data_train, target_train).score(data_test, target_test)
         res_baseline_uniform = clf_baseline_uniform.fit(data_train, target_train).score(data_test, target_test)
-        
+
         # Produce classification report.
-        clf_report_eval = metrics.classification_report(target_test, res_pred, target_names=['Yes', 'No'])
-        clf_report_baseline = metrics.classification_report(target_test, clf_baseline_uniform.predict(data_test), target_names=['Yes', 'No'])
+        clf_report_eval = metrics.classification_report(target_test, res_pred, target_names=['No', 'Yes'])
+        clf_report_baseline_majority = metrics.classification_report(target_test, clf_baseline_majority.predict(data_test), target_names=['No', 'Yes'])
+        clf_report_baseline_uniform = metrics.classification_report(target_test, clf_baseline_uniform.predict(data_test), target_names=['No', 'Yes'])
+
+        import pdb
+        pdb.set_trace()
         
         # Save results to file. 
         # Save accuracies for evaluated model, uniform baseline model and majority baseline model.
         # Save classification reports for evaluated model and uniform baseline model.
         save_results(kind='tts', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
-                     clf_reports=[clf_report_eval, clf_report_baseline], 
+                     clf_reports=[clf_report_eval, clf_report_baseline_uniform, clf_report_baseline_majority], 
                      acc_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'],
-                     clf_reports_names=[clf_eval['clf'].name, 'Uniform classifier'])
+                     clf_reports_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
         
 
     elif eval_method == 'cv':
@@ -357,7 +361,7 @@ if __name__ == '__main__':
         feature_subset_lengths = np.load('../data/cached/target_book_feature_subset_lengths.npy')
 
         # Decompose long feature subsets.
-        feature_subset_lengths_dec = decompose_feature_subs_lengths(feature_subset_lengths, 100, 300)
+        feature_subset_lengths_dec = decompose_feature_subs_lengths(feature_subset_lengths, 100, 100)
         clf = FeatureStackingClf(subset_lengths = feature_subset_lengths_dec)
         clf.name = 'stacking'
     
