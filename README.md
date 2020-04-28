@@ -97,7 +97,8 @@ to run a repl for real-time evaluation of user-provided messages.
 As stated earlier the REPL can be accessed by running the *evaluate.py* script with the ***--action repl*** command-line option argument pair. Additionally, the classification model can be
 specified using the ***--method*** option as described in the previous section. The REPL allows the evaluation of user-provided messages. It stores previous classification results to allow
 the use of the Markov model and the conditional probabilities computed on training data. The REPL loop can be terminated by simply typing quit. The REPL processes each
-message and outputs the probabilities resulting from running the classification algorithm. An example of a REPL session is shown below.
+message and outputs the probabilities resulting from running the classification algorithm. An example of a REPL session is shown below. The probabilities below messages indicate predicted
+probabilities of messages being relevant to discussed books or not.
 
 ![alt text](./reports/img/repl_session.png "REPL Session")
 
