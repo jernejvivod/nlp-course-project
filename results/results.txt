@@ -810,3 +810,28 @@ rf: 0.8319590992281372
 Uniform classifier: 0.5097326330866554
 Majority classifier: 0.6085469881435507
 
+##########
+Date: 28/04/2020 16:10:56
+##########
+
+Evaluation method: tts
+rf: 0.828169014084507
+Uniform classifier: 0.5211267605633803
+Majority classifier: 0.36338028169014086
+rf:               precision    recall  f1-score   support
+
+         Yes       0.76      0.78      0.77       129
+          No       0.87      0.86      0.86       226
+
+    accuracy                           0.83       355
+   macro avg       0.81      0.82      0.82       355
+weighted avg       0.83      0.83      0.83       355
+Uniform classifier:               precision    recall  f1-score   support
+
+         Yes       0.43      0.62      0.50       129
+          No       0.71      0.52      0.60       226
+
+    accuracy                           0.56       355
+   macro avg       0.57      0.57      0.55       355
+weighted avg       0.60      0.56      0.57       355
+

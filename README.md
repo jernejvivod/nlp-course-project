@@ -108,6 +108,17 @@ probabilities of messages being relevant to discussed books or not.
 
 # Preliminary Results
 
+We started by trying to predict the relevance of messages to the actual books being discussed. We used a train-test split as well as 10-fold cross validation 
+to evaluate the predictions of our models. The table below shows the obtained results.
+
+| model               | accuracy (tts) | accuracy (cv) | precission           | recall                | f1-score              | support             |
+|---------------------|----------------|---------------|----------------------|-----------------------|-----------------------|---------------------|
+| rf                  | 0.8281         |               | 0.76 (yes), 0.87(no) | 0.78 (yes), 0.86 (no) | 0.77 (yes), 0.86 (no) | 192 (yes), 226 (no) |
+| svm                 |                |               |                      |                       |                       |                     |
+| stacking            |                |               |                      |                       |                       |                     |
+| baseline (majority) |                |               |                      |                       |                       |                     |
+| baseline (uniform)  |                |               |                      |                       |                       |                     |
+
 
 # References
 <a id="1">[1]</a> 
