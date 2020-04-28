@@ -124,7 +124,7 @@ The figure below shows the confusion matrix obtained using the Feature stacking 
 and positives can be found in the *results* folder in the *fn.xlsx* and *fp.xlsx* files respectively. We can see that short messages, the relevance of
 which is extremely ambiguous when taken out of context, make up the majority of the false negatives.
 
-![alt text](./reports/img/cfm_stacking "REPL Session")
+![alt text](./reports/img/cfm_stacking.png "REPL Session")
 
 The figure below shows the ROC curve obtained using the Feature stacking method evaluated using a train-test split.
 
