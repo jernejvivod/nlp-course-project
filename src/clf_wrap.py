@@ -9,29 +9,25 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
     conditional probabilities in predictions.
     
     Args:
-        clf (obj): TODO
-        n_look_back (int): TODO
-        alpha (float): TODO
-        beta (float): TODO
-        thresh (float): TODO
-        predict_proba (bool): TODO
+        clf (obj): Classifier to wrap
+        n_look_back (int): How many predictions to look back when computing
+        conditional probabilities.
+        alpha (float): Weight assigned to Markov model prediction.
+        beta (float): Weight assigned to conditional probabilities' prediction.
 
     Attributes:
-        clf (obj): TODO
-        n_look_back (int): TODO
-        alpha (float): TODO
-        beta (float): TODO
-        thresh (float): TODO
-        predict_proba (bool): TODO
+        clf (obj): Classifier to wrap
+        n_look_back (int): How many predictions to look back when computing
+        conditional probabilities.
+        alpha (float): Weight assigned to Markov model prediction.
+        beta (float): Weight assigned to conditional probabilities' prediction.
     """
 
-    def __init__(self, clf, n_look_back=4, alpha=0.0, beta=0.0, thresh=0.5, predict_proba=False):
+    def __init__(self, clf, n_look_back=4, alpha=0.0, beta=0.0):
         self.clf = clf
         self.n_look_back = n_look_back
         self.alpha = alpha
         self.beta = beta
-        self.thresh = thresh
-        self.predict_proba = predict_proba
 
 
     def fit(self, X, y):

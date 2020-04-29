@@ -8,20 +8,23 @@ from sklearn.ensemble import RandomForestClassifier
 class FeatureStackingClf(BaseEstimator, ClassifierMixin):
     """
     Feature stacking classifier as described in TODO.
+
+    Reference:
+        Lui, M. (2012). Feature Stacking for Sentence Classification in Evidence-Based Medicine. 
+        In Proceedings of the Australasian Language Technology Association Workshop 2012 (pp. 134–138).
     
     Args:
-        subset_lengths (list): TODO
-        l0_clf (obj): TODO
-        l1_clf (obj): TODO
-        cv_num_folds (int): TODO
+        subset_lengths (list): Lenghts of feature subsets.
+        l0_clf (obj): Classifier to use in the first layer (on feature subsets)
+        l1_clf (obj): Classifier to use in the final layer
+        cv_num_folds (int): Number of folds to use when encoding training data using cross-validation.
 
     Attributes:
-        subset_lengths (list): TODO
-        l0_clf (obj): TODO
-        l1_clf (obj): TODO
-        cv_num_folds (int): TODO
+        subset_lengths (list): Lenghts of feature subsets.
+        l0_clf (obj): Classifier to use in the first layer (on feature subsets)
+        l1_clf (obj): Classifier to use in the final layer
+        cv_num_folds (int): Number of folds to use when encoding training data using cross-validation.
     """
-
 
     def __init__(self, subset_lengths, l0_clf=LogisticRegression, l1_clf=RandomForestClassifier, cv_num_folds=10):
         self.subset_lengths = subset_lengths

@@ -197,9 +197,6 @@ def plot_roc(data, target, clf):
 
     # Evaluate classifier to get probabilities.
     scores = clf_eval.fit(data_train, target_train).predict_proba(data_test)
-
-    import pdb
-    pdb.set_trace()
     
     # Get false positive rates, true positive rates and thresholds.
     fpr, tpr, thresholds = metrics.roc_curve(target_test, scores[:, 1], pos_label=1)
