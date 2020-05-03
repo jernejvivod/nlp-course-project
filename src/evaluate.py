@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+import sys
 import pandas as pd
 from termcolor import colored
 
@@ -22,11 +23,13 @@ from feat_stacking_clf import FeatureStackingClf
 from feature_engineering import get_repl_processor
 
 
-def save_results(kind, accs=None, clf_reports=None, acc_names=None, clf_reports_names=None):
+def save_results(category, kind, accs=None, clf_reports=None, acc_names=None, clf_reports_names=None):
     """
     Store specified results to file.
 
     Args:
+        category (str): Specification of the type of prediction being made.
+        Valid values are 'book-relevance', 'type', 'category' and 'category-broad'.
         kind (str): Evaluation method used to produce the results (cross-validation, train-test split, ...)
         accs (list): List of accuracies for evaluated models
         clf_reports (list): List of classification reports to write to file.
@@ -38,6 +41,7 @@ def save_results(kind, accs=None, clf_reports=None, acc_names=None, clf_reports_
     with open('../results/results.txt', 'a') as f:
         f.write('##########\n')
         f.write('Date: {0}\n'.format(datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')))
+        f.write('Category: {0}\n'.format(category))
         f.write('##########\n\n')
         f.write('Evaluation method: {0}\n'.format(kind))
         if accs:
@@ -53,7 +57,7 @@ def save_results(kind, accs=None, clf_reports=None, acc_names=None, clf_reports_
         f.write('\n')
 
 
-def evaluate(data, target, clf, eval_method):
+def evaluate(data, target, category, clf, eval_method):
     """
     Evaluate model on dataset using either cross-validation or train-test split.
     Write results to file in form of classification accuracy as well as a
@@ -62,6 +66,8 @@ def evaluate(data, target, clf, eval_method):
     Args:
         data (numpy.ndarray): Dataset to use (extracted features)
         target (numpy.ndarray): Labels for the samples
+        category (str): Specification of the type of prediction being made.
+        Valid values are 'book-relevance', 'type', 'category' and 'category-broad'.
         clf (obj): Classification model to evaluate
         eval_method (str): Evaluation method to use. Valid values are 'tts' for train-test
         split and 'cv' for cross-validation
@@ -109,10 +115,10 @@ def evaluate(data, target, clf, eval_method):
         
         # Save fp, fn, tp and tn messages to results folder as .xlsx files.
         sheet_raw = pd.read_excel(discussions_path)
-        fp = sheet_raw.loc[idx_fail_fp, :].dropna(axis='columns').to_excel('../results/fp.xlsx')
-        fn = sheet_raw.loc[idx_fail_fn, :].dropna(axis='columns').to_excel('../results/fn.xlsx') 
-        tp = sheet_raw.loc[idx_succ_tp, :].dropna(axis='columns').to_excel('../results/tp.xlsx') 
-        tn = sheet_raw.loc[idx_succ_tn, :].dropna(axis='columns').to_excel('../results/tn.xlsx') 
+        fp = sheet_raw.loc[idx_fail_fp, :].dropna(axis='columns').to_excel('../results/fp' + category.replace('-', '_') + '.xlsx')
+        fn = sheet_raw.loc[idx_fail_fn, :].dropna(axis='columns').to_excel('../results/fn' + category.replace('-', '_') + '.xlsx') 
+        tp = sheet_raw.loc[idx_succ_tp, :].dropna(axis='columns').to_excel('../results/tp' + category.replace('-', '_') + '.xlsx') 
+        tn = sheet_raw.loc[idx_succ_tn, :].dropna(axis='columns').to_excel('../results/tn' + category.replace('-', '_') + '.xlsx') 
 
         # Evaluate baseline classifiers.
         res_baseline_majority = clf_baseline_majority.fit(data_train, target_train).score(data_test, target_test)
@@ -125,13 +131,10 @@ def evaluate(data, target, clf, eval_method):
         clf_report_baseline_majority = metrics.classification_report(target_test, clf_baseline_majority.predict(data_test), target_names=['No', 'Yes'])
         clf_report_baseline_uniform = metrics.classification_report(target_test, clf_baseline_uniform.predict(data_test), target_names=['No', 'Yes'])
 
-        import pdb
-        pdb.set_trace()
-        
         # Save results to file. 
         # Save accuracies for evaluated model, uniform baseline model and majority baseline model.
         # Save classification reports for evaluated model and uniform baseline model.
-        save_results(kind='tts', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
+        save_results(category=cateogry, kind='tts', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
                      clf_reports=[clf_report_eval, clf_report_baseline_uniform, clf_report_baseline_majority], 
                      acc_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'],
                      clf_reports_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
@@ -175,17 +178,19 @@ def evaluate(data, target, clf, eval_method):
         res_baseline_uniform = score_cv_baseline_uniform / N_SPLITS
 
         # Save results to file.
-        save_results(kind='cv', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
+        save_results(category=category, kind='cv', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
                      acc_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
 
 
-def plot_roc(data, target, clf):
+def plot_roc(data, target, category, clf):
     """
     Plot ROC curve using train-test split and save results to file.
     
     Args:
         data (numpy.ndarray): Dataset to use (extracted features)
         target (numpy.ndarray): Labels for the samples
+        category (str): Specification of the type of prediction being made.
+        Valid values are 'book-relevance', 'type', 'category' and 'category-broad'.
         clf (obj): Classification model to evaluate
     """
     
@@ -216,18 +221,20 @@ def plot_roc(data, target, clf):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic example')
     plt.legend(loc="lower right")
-    plt.savefig('../results/plots/roc.png')
+    plt.savefig('../results/plots/roc_' + category.replace('-', '_') + '.png')
     plt.clf()
     plt.close()
 
 
-def confusion_matrix(data, target, clf, class_names, title, cm_save_path):
+def confusion_matrix(data, target, clf, category, class_names, title, cm_save_path):
     """
     Plot and save confuction matrix for specified classifier.
 
     Args:
         data (numpy.ndarray): Data samples
         target (numpy.ndarray): Data labels (target variable values)
+        category (str): Specification of the type of prediction being made.
+        Valid values are 'book-relevance', 'type', 'category' and 'category-broad'.
         clf (object): Classifier for which to plot the confuction matrix.
         class_names (list): List of class names
         title (str): Plot title
@@ -255,7 +262,7 @@ def confusion_matrix(data, target, clf, class_names, title, cm_save_path):
     disp.ax_.set_title("Normalized Confusion Matrix - " + title)
     disp.figure_.set_size_inches(9.0, 9.0, forward=True)
     plt.tight_layout()
-    plt.savefig('../results/plots/cfm.png')
+    plt.savefig('../results/plots/cfm_' + category + '.png')
     plt.clf()
     plt.close()
 
@@ -341,11 +348,12 @@ if __name__ == '__main__':
     parser.add_argument('--method', type=str, choices=['rf', 'svm', 'stacking'], default='rf')
     parser.add_argument('--eval-method', type=str, choices=['tts', 'cv'], default='tts')
     parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl'], default='eval')
+    parser.add_argument('--category', type=str, choices=['book-relevance', 'type', 'category', 'category-broad'], default='book-relevance')
     args = parser.parse_args()
     
     # Load data.
-    data = np.load('../data/cached/data_book_relevance.npy')
-    target = np.load('../data/cached/target_book_relevance.npy')
+    data = np.load('../data/cached/data_' + args.category.replace('-', '_') + '.npy')
+    target = np.load('../data/cached/target_' + args.category.replace('-', '_') + '.npy')
 
     # Select classifier.
     if args.method == 'rf':
@@ -358,6 +366,8 @@ if __name__ == '__main__':
         clf.name = 'SVM'
     elif args.method == 'stacking':
         feature_subset_lengths = np.load('../data/cached/target_book_feature_subset_lengths.npy')
+        feature_subset_lenghts = np.load('../data/cached/target_' + category.replace('-', '_') + '_feature_subset_lengths.npy')
+
 
         # Decompose long feature subsets.
         feature_subset_lengths_dec = decompose_feature_subs_lengths(feature_subset_lengths, 100, 100)
@@ -366,11 +376,15 @@ if __name__ == '__main__':
     
     # Select action.
     if args.action == 'eval':
-        evaluate(data, target, clf, args.eval_method)
+        evaluate(data, target, args.category, clf, args.eval_method)
     elif args.action == 'roc':
-        plot_roc(data, target, clf)
+        plot_roc(data, target, args.category, clf)
     elif args.action == 'cm':
-        confusion_matrix(data, target, clf, ['No', 'Yes'], 'Feature Stacking', '../results/plots/cfm.png')
+        confusion_matrix(data, target, args.category, clf, ['No', 'Yes'], 'Feature Stacking', '../results/plots/cfm.png')
     elif args.action == 'repl':
-        repl(clf, data, target)
+        if args.category == 'book-relevance':
+            repl(clf, data, target)
+        else:
+            raise(NotImplementedError('REPL can currently only be used for book-relevance prediction'))
+    sys.exit(0)
  
