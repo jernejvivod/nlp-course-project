@@ -6,7 +6,7 @@ import pandas as pd
 from termcolor import colored
 
 from sklearn.model_selection import KFold, train_test_split, GridSearchCV
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
 from sklearn.base import clone
 from sklearn import metrics
 
@@ -57,7 +57,7 @@ def save_results(category, kind, accs=None, clf_reports=None, acc_names=None, cl
         f.write('\n')
 
 
-def evaluate(data, target, category, clf, eval_method):
+def evaluate(data, target, category, clf, eval_method, target_names):
     """
     Evaluate model on dataset using either cross-validation or train-test split.
     Write results to file in form of classification accuracy as well as a
@@ -71,10 +71,11 @@ def evaluate(data, target, category, clf, eval_method):
         clf (obj): Classification model to evaluate
         eval_method (str): Evaluation method to use. Valid values are 'tts' for train-test
         split and 'cv' for cross-validation
+        target_names (list): List of labels corresponding to target values.
     """
 
     # Initialize pipeline template.
-    clf_pipeline = Pipeline([('scaling', StandardScaler())])
+    clf_pipeline = Pipeline([('scaling', RobustScaler())])
 
     # Add classifier to pipeline.
     clf_eval = clone(clf_pipeline)
@@ -107,18 +108,36 @@ def evaluate(data, target, category, clf, eval_method):
         res_pred = clf_eval.fit(data_train, target_train).predict(data_test)
         res_eval = metrics.accuracy_score(res_pred, target_test)
         
-        # Get indices of messages representing fp, fn, tp and tn.
-        idx_fail_fp = idxs_test[np.logical_and(res_pred == 1, target_test == 0)]
-        idx_fail_fn = idxs_test[np.logical_and(res_pred == 0, target_test == 1)]
-        idx_succ_tp = idxs_test[np.logical_and(res_pred == 0, target_test == 0)]
-        idx_succ_tn = idxs_test[np.logical_and(res_pred == 1, target_test == 1)]
+        # TODO change for non-binary classification!
         
-        # Save fp, fn, tp and tn messages to results folder as .xlsx files.
-        sheet_raw = pd.read_excel(discussions_path)
-        fp = sheet_raw.loc[idx_fail_fp, :].dropna(axis='columns').to_excel('../results/fp' + category.replace('-', '_') + '.xlsx')
-        fn = sheet_raw.loc[idx_fail_fn, :].dropna(axis='columns').to_excel('../results/fn' + category.replace('-', '_') + '.xlsx') 
-        tp = sheet_raw.loc[idx_succ_tp, :].dropna(axis='columns').to_excel('../results/tp' + category.replace('-', '_') + '.xlsx') 
-        tn = sheet_raw.loc[idx_succ_tn, :].dropna(axis='columns').to_excel('../results/tn' + category.replace('-', '_') + '.xlsx') 
+        # If predicting book relevance (binary classification problem), write fp, fn, tp and tn
+        # to file.
+        if category == 'book-relevance':
+
+            # Get indices of messages representing fp, fn, tp and tn.
+            idx_fail_fp = idxs_test[np.logical_and(res_pred == 1, target_test == 0)]
+            idx_fail_fn = idxs_test[np.logical_and(res_pred == 0, target_test == 1)]
+            idx_succ_tp = idxs_test[np.logical_and(res_pred == 0, target_test == 0)]
+            idx_succ_tn = idxs_test[np.logical_and(res_pred == 1, target_test == 1)]
+            
+            # Save fp, fn, tp and tn messages to results folder as .xlsx files.
+            sheet_raw = pd.read_excel(discussions_path)
+            fp = sheet_raw.loc[idx_fail_fp, :].dropna(axis='columns').to_excel('../results/fp_' + category.replace('-', '_') + '.xlsx')
+            fn = sheet_raw.loc[idx_fail_fn, :].dropna(axis='columns').to_excel('../results/fn_' + category.replace('-', '_') + '.xlsx') 
+            tp = sheet_raw.loc[idx_succ_tp, :].dropna(axis='columns').to_excel('../results/tp_' + category.replace('-', '_') + '.xlsx') 
+            tn = sheet_raw.loc[idx_succ_tn, :].dropna(axis='columns').to_excel('../results/tn_' + category.replace('-', '_') + '.xlsx') 
+
+        else:
+            
+            # Get indices of messages representing fp, fn, tp and tn.
+            idx_fail = idxs_test[res_pred != target_test]
+            idx_succ = idxs_test[res_pred == target_test]
+            
+            # Save fp, fn, tp and tn messages to results folder as .xlsx files.
+            sheet_raw = pd.read_excel(discussions_path)
+            fp = sheet_raw.loc[idx_fail, :].dropna(axis='columns').to_excel('../results/fail_' + category.replace('-', '_') + '.xlsx')
+            tn = sheet_raw.loc[idx_succ, :].dropna(axis='columns').to_excel('../results/success_' + category.replace('-', '_') + '.xlsx') 
+
 
         # Evaluate baseline classifiers.
         res_baseline_majority = clf_baseline_majority.fit(data_train, target_train).score(data_test, target_test)
@@ -127,14 +146,14 @@ def evaluate(data, target, category, clf, eval_method):
         res_baseline_uniform = clf_baseline_uniform.fit(data_train, target_train).score(data_test, target_test)
 
         # Produce classification report.
-        clf_report_eval = metrics.classification_report(target_test, res_pred, target_names=['No', 'Yes'])
-        clf_report_baseline_majority = metrics.classification_report(target_test, clf_baseline_majority.predict(data_test), target_names=['No', 'Yes'])
-        clf_report_baseline_uniform = metrics.classification_report(target_test, clf_baseline_uniform.predict(data_test), target_names=['No', 'Yes'])
+        clf_report_eval = metrics.classification_report(target_test, res_pred, target_names=target_names)
+        clf_report_baseline_majority = metrics.classification_report(target_test, clf_baseline_majority.predict(data_test), target_names=target_names)
+        clf_report_baseline_uniform = metrics.classification_report(target_test, clf_baseline_uniform.predict(data_test), target_names=target_names)
 
         # Save results to file. 
         # Save accuracies for evaluated model, uniform baseline model and majority baseline model.
         # Save classification reports for evaluated model and uniform baseline model.
-        save_results(category=cateogry, kind='tts', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
+        save_results(category=category, kind='tts', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
                      clf_reports=[clf_report_eval, clf_report_baseline_uniform, clf_report_baseline_majority], 
                      acc_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'],
                      clf_reports_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
@@ -195,7 +214,7 @@ def plot_roc(data, target, category, clf):
     """
     
     # Initialize pipeline.
-    clf_eval = Pipeline([('scaling', StandardScaler()), ('clf', clf)])
+    clf_eval = Pipeline([('scaling', RobustScaler()), ('clf', clf)])
 
     # Get training and test data.
     data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False, test_size=0.1)
@@ -226,7 +245,7 @@ def plot_roc(data, target, category, clf):
     plt.close()
 
 
-def confusion_matrix(data, target, clf, category, class_names, title, cm_save_path):
+def confusion_matrix(data, target, category, clf, class_names, title):
     """
     Plot and save confuction matrix for specified classifier.
 
@@ -238,11 +257,10 @@ def confusion_matrix(data, target, clf, category, class_names, title, cm_save_pa
         clf (object): Classifier for which to plot the confuction matrix.
         class_names (list): List of class names
         title (str): Plot title
-        cm_save_path (str): Path for saving the confusion matrix plot
     """
 
     # Initialize random forest classifier, apply wrapper and add to pipeline.
-    clf_eval = Pipeline([('scaling', StandardScaler()), ('clf', clf)])
+    clf_eval = Pipeline([('scaling', RobustScaler()), ('clf', clf)])
 
     # Split data into training and test sets.
     data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False)
@@ -355,6 +373,12 @@ if __name__ == '__main__':
     data = np.load('../data/cached/data_' + args.category.replace('-', '_') + '.npy')
     target = np.load('../data/cached/target_' + args.category.replace('-', '_') + '.npy')
 
+    import pdb
+    pdb.set_trace()
+
+    # Load target names.
+    target_names = np.load('../data/cached/target-names/target_' + args.category.replace('-', '_') + '_names.npy', allow_pickle=True)
+
     # Select classifier.
     if args.method == 'rf':
         clf = RandomForestClassifier(n_estimators=100)
@@ -365,9 +389,9 @@ if __name__ == '__main__':
         clf = ClfWrap(clf)
         clf.name = 'SVM'
     elif args.method == 'stacking':
-        feature_subset_lengths = np.load('../data/cached/target_book_feature_subset_lengths.npy')
-        feature_subset_lenghts = np.load('../data/cached/target_' + category.replace('-', '_') + '_feature_subset_lengths.npy')
-
+        
+        # Load feature subset lengths.
+        feature_subset_lengths = np.load('../data/cached/target_' + args.category.replace('-', '_') + '_feature_subset_lengths.npy')
 
         # Decompose long feature subsets.
         feature_subset_lengths_dec = decompose_feature_subs_lengths(feature_subset_lengths, 100, 100)
@@ -376,11 +400,21 @@ if __name__ == '__main__':
     
     # Select action.
     if args.action == 'eval':
-        evaluate(data, target, args.category, clf, args.eval_method)
+        evaluate(data, target, args.category, clf, args.eval_method, target_names)
     elif args.action == 'roc':
-        plot_roc(data, target, args.category, clf)
+        if args.category == 'book-relevance':
+            plot_roc(data, target, args.category, clf)
+        else:
+            raise(ValueError('The ROC curve functionality can only be used for book-relevance prediction'))
     elif args.action == 'cm':
-        confusion_matrix(data, target, args.category, clf, ['No', 'Yes'], 'Feature Stacking', '../results/plots/cfm.png')
+        # Set title to use.
+        if args.method == 'rf':
+            title = 'Random Forest'
+        elif args.method == 'svm':
+            title = 'Support Vector Machine'
+        elif args.method == 'stacking':
+            title = 'Feature Stacking'
+        confusion_matrix(data, target, args.category, clf, target_names, title)
     elif args.action == 'repl':
         if args.category == 'book-relevance':
             repl(clf, data, target)

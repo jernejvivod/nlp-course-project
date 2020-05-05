@@ -66,13 +66,13 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
         Returns:
             (numpy.ndarray): Predicted labels
         """
-        
+
         # Initialize array for predictions.
         predictions = np.empty(X.shape[0], dtype=int)
         
         # Go over samples.
         for idx, sample in enumerate(X):
-            
+
             # Predict probability for next sample using classification algorithm.
             pred_clf = self.clf.predict_proba(sample.reshape(1, -1))[0]
             
@@ -84,12 +84,20 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
                     # If sample index large enough to use conditional probabilities,
                     # use computed conditional probabilities to make prediction.
                     patt = predictions[idx-self.n_look_back:idx]
-                    pred_cond_prob = self.cond_prob[str(patt)]
+                    
+                    # Check if prediction in dictionary.
+                    if str(patt) in self.cond_prob:
+                        pred_cond_prob = self.cond_prob[str(patt)]
 
-                    # Combine predictions of classifier, Markov model and conditional probabilities.
-                    pred_comb = (1-self.alpha-self.beta)*pred_clf + self.alpha*pred_markov_mod + self.beta*pred_cond_prob
+                        # Combine predictions of classifier, Markov model and conditional probabilities.
+                        pred_comb = (1-self.alpha-self.beta)*pred_clf + self.alpha*pred_markov_mod + self.beta*pred_cond_prob
+                        predictions[idx] = np.argmax(pred_comb)
+                    else:
+                        pred_comb = (1-self.alpha)*pred_clf + self.alpha*pred_markov_mod
+                        predictions[idx] = np.argmax(pred_comb)
                 else:
                     pred_comb = (1-self.alpha)*pred_clf + self.alpha*pred_markov_mod
+                    predictions[idx] = np.argmax(pred_comb)
             else:
                 # Set prediction as most probable class.
                 predictions[idx] = np.argmax(pred_clf)
