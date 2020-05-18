@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 
 class FeatureStackingClf(BaseEstimator, ClassifierMixin):
     """
-    Feature stacking classifier as described in TODO.
+    Feature stacking classifier implementation
 
     Reference:
         Lui, M. (2012). Feature Stacking for Sentence Classification in Evidence-Based Medicine. 

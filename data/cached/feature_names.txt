@@ -1,0 +1,15 @@
+general-feature-0
+general-feature-1
+general-feature-2
+general-feature-3
+general-feature-4
+general-feature-5
+general-feature-6
+general-feature-7
+general-feature-8
+curse-words
+repeated-letters
+clue-words
+given-names
+chat-names
+story-names

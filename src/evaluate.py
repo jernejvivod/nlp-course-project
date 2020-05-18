@@ -18,8 +18,9 @@ from sklearn.dummy import DummyClassifier
 from imblearn.pipeline import Pipeline
 from imblearn.combine import SMOTETomek
 
-from clf_wrap import ClfWrap
-from feat_stacking_clf import FeatureStackingClf
+from classifiers.clf_wrap import ClfWrap
+from classifiers.feat_stacking_clf import FeatureStackingClf
+from classifiers.gboostclf import GradientBoostingClassifier
 from feature_engineering import get_repl_processor
 
 
@@ -107,8 +108,6 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         # Evaluate classifier.
         res_pred = clf_eval.fit(data_train, target_train).predict(data_test)
         res_eval = metrics.accuracy_score(res_pred, target_test)
-        
-        # TODO change for non-binary classification!
         
         # If predicting book relevance (binary classification problem), write fp, fn, tp and tn
         # to file.
@@ -358,23 +357,42 @@ def repl(clf, data_train, target_train):
         message = input('message: ')
 
 
+def evaluate_features(clf, f_to_name):
+    """
+    Evaluate features using classifiers that support feature evaluation.
+
+    Args:
+        clf (object): Trained classifier
+        f_to_name (dict): Dictionary mapping feature enumerations in the
+        form 'f0', 'f1', ... to their names.
+
+    Returns:
+        (dict): Dictionary mapping feature names to their estimated importances.
+    """
+
+    scores = clf.score_features(f_to_name)
+    with open('../results/feature_scores.txt', 'w') as f:
+        f.write('{0}:\n'.format(clf.name))
+        for (name, score) in [(name, score) for name, score in \
+                sorted(scores.items(), key=lambda x: x[1], reverse=True)]:
+            f.write('{0}: {1:.4f}\n'.format(name, score))
+        f.write('\n')
+
+
 if __name__ == '__main__':
     import argparse
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, choices=['rf', 'svm', 'stacking'], default='rf')
+    parser.add_argument('--method', type=str, choices=['rf', 'svm', 'gboosting', 'logreg', 'stacking'], default='rf')
     parser.add_argument('--eval-method', type=str, choices=['tts', 'cv'], default='tts')
-    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl'], default='eval')
+    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl', 'eval-features'], default='eval')
     parser.add_argument('--category', type=str, choices=['book-relevance', 'type', 'category', 'category-broad'], default='book-relevance')
     args = parser.parse_args()
     
     # Load data.
     data = np.load('../data/cached/data_' + args.category.replace('-', '_') + '.npy')
     target = np.load('../data/cached/target_' + args.category.replace('-', '_') + '.npy')
-
-    import pdb
-    pdb.set_trace()
 
     # Load target names.
     target_names = np.load('../data/cached/target-names/target_' + args.category.replace('-', '_') + '_names.npy', allow_pickle=True)
@@ -388,6 +406,14 @@ if __name__ == '__main__':
         clf = SVC(gamma='auto', probability=True)
         clf = ClfWrap(clf)
         clf.name = 'SVM'
+    elif args.method == 'logreg':
+        clf = LogisticRegression(max_iter=1000)
+        clf = ClfWrap(clf)
+        clf.name = 'logreg'
+    elif args.method == 'gboosting':
+        clf = GradientBoostingClassifier()
+        clf = ClfWrap(clf)
+        clf.name = 'gboosting'
     elif args.method == 'stacking':
         
         # Load feature subset lengths.
@@ -414,11 +440,22 @@ if __name__ == '__main__':
             title = 'Support Vector Machine'
         elif args.method == 'stacking':
             title = 'Feature Stacking'
+        elif args.method == 'gboosting':
+            title = 'Gradient Boosting'
+        elif args.method == 'logreg':
+            title = 'Logistic Regression'
         confusion_matrix(data, target, args.category, clf, target_names, title)
     elif args.action == 'repl':
         if args.category == 'book-relevance':
             repl(clf, data, target)
         else:
             raise(NotImplementedError('REPL can currently only be used for book-relevance prediction'))
+    elif args.action == 'eval-features':
+        clf.fit(data, target)
+        with open('../data/cached/feature_names.txt', 'r') as f:
+            feature_names = list(map(lambda x: x.strip(), f.readlines()))
+            f_to_name = {'f' + str(idx) : feature_names[idx] for idx in range(len(feature_names))}
+        evaluate_features(clf, f_to_name)
+    
     sys.exit(0)
  

@@ -165,3 +165,25 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
         return accuracy_score(y, self.predict(X), sample_weight=sample_weight)
 
 
+    def score_features(self, f_to_name):
+        """
+        Score feature importances.
+
+        Args:
+            f_to_name (dict): Dictionary mapping feature enumerations such as 'f0', 'f1', ...
+            to feature names.
+
+        Returns:
+            (dict): Dictionary mapping feature names as defined in f_to_name parameter to
+            their estimated importances.
+        """
+        
+        if self.name in {'gboosting', 'logreg'}:
+            if self.name == 'gboosting':
+                return self.clf.score_features(f_to_name)
+            elif self.name == 'logreg':
+                weights = np.abs(self.clf.coef_[0])/sum(np.abs(self.clf.coef_[0]))
+                return {f_to_name['f' + str(idx)] : weights[idx] for idx in range(len(weights))} 
+        else:
+            raise(NotImplementedError('Feature scoring not implemented for this type of classifier'))
+

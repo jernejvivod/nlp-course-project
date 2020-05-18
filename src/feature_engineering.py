@@ -133,11 +133,17 @@ def translate_nstd(message, dictionary):
 
 
 def get_pos_simple(message, dictionary):
+    """
+    Translate non-standard Slovene, tag message and return POS tags.
+
+    Args:
+        message (str): The message to tag
+        dictionary (dict): Dictionary mapping non-standard Slovene words
+        to standard slovene words.
+    """
     translated = translate_nstd(message, dictionary)
     tagged = slopos.tag(translated)
     return ' '.join(map(lambda x: x[1][:2], tagged))
-
-
 
 
 def eval_bow(message, bow):
@@ -429,7 +435,7 @@ def get_repl_processor():
     return message_features
 
 
-def construct_features(data, category):
+def construct_features(data, category, use_bow_features=True):
     """
     Extract various features from messages and format data
     for classification.
@@ -439,7 +445,7 @@ def construct_features(data, category):
         category (str): Specification of the type of prediction being made.
         Valid values are 'book-relevance', 'type', 'category' and 'category-broad'
     """
-
+    
         
     # Get data.
     data_category = data[category]
@@ -450,16 +456,20 @@ def construct_features(data, category):
     data_mat_res = None
     first = True
 
+    # Initialize list for storing feature names (for feature scoring).
+    feature_names = []
+
     # Load dictionary for non-standard Slovene.
     with open('../data/slo_nstd_dict.p', 'rb') as f:
         slo_nstd_dict = pickle.load(f)
     
-    # Get bag-of-words list.
-    bow = get_bow(data[category]['x'].values.astype(str))
+    # If using BOW features, get bag-of-words list.
+    if use_bow_features:
+        bow = get_bow(data[category]['x'].values.astype(str))
 
-    # Save bag-of-words list.
-    with open('../data/cached/repl/bow.p', 'wb') as f:
-        pickle.dump(bow, f, pickle.HIGHEST_PROTOCOL)
+        # Save bag-of-words list.
+        with open('../data/cached/repl/bow.p', 'wb') as f:
+            pickle.dump(bow, f, pickle.HIGHEST_PROTOCOL)
     
     # Get list for storing POS tagged messages (simplified).
     messages_pos = []
@@ -467,6 +477,20 @@ def construct_features(data, category):
     # Set flag for getting feature subset lengths using first message.
     get_feature_subset_lengths = True
     feature_subset_lengths = None
+    
+    # Add initial feature names to list.
+    feature_names.extend(['general-feature-' + str(idx) 
+        for idx in range(len(get_general_features(messages_list[0])))])
+    feature_names.append('curse-words')
+    feature_names.append('repeated-letters')
+    feature_names.append('clue-words')
+    feature_names.append('given-names')
+    feature_names.append('chat-names')
+    feature_names.append('story-names')
+    
+    # If using BOW features, add to feature names.
+    if use_bow_features:
+        feature_names.extend(['bow-feature:{0}'.format(el) for el in bow])
 
     # Go over messages.
     for idx, message in enumerate(messages_list):
@@ -482,8 +506,12 @@ def construct_features(data, category):
         given_names = num_given_names(message, data['names'])
         chat_names = num_chat_names(message, data['chat-names'])
         story_names = num_story_names(message, data['story-names'])
-        bow_features = eval_bow(message, bow)
 
+        # If using BOW features, get bag-of-words feature vector.
+        if use_bow_features:
+            bow_features = eval_bow(message, bow)
+        else:
+            bow_features = np.array([])
 
         # Append POS tagged (simplified) message to list.
         messages_pos.append(get_pos_simple(message, slo_nstd_dict))
@@ -504,23 +532,30 @@ def construct_features(data, category):
         else:
             data_mat_res = np.vstack((data_mat_res, feat_vec))
         print("Processed message {0}/{1}.".format(idx+1, len(messages_list)))
-
-    # Count bigrams.
-    vectorizer1 = CountVectorizer(min_df=2, ngram_range=(2, 2))
-    bigram_count = vectorizer1.fit_transform(messages_list).toarray()
-    data_mat_res = np.hstack((data_mat_res, bigram_count))
-    feature_subset_lengths.append(bigram_count.shape[1])
-    with open('../data/cached/repl/count_vectorizer.p', 'wb') as f:
-        pickle.dump(vectorizer1, f, pickle.HIGHEST_PROTOCOL)
     
-    # Get tf-idf results for POS tags (simplified).
-    vectorizer2 = TfidfVectorizer()
-    pos_tfidf = vectorizer2.fit_transform(messages_pos).toarray()
-    data_mat_res = np.hstack((data_mat_res, pos_tfidf))
-    feature_subset_lengths.append(pos_tfidf.shape[1])
-    with open('../data/cached/repl/pos_tfidf_vectorizer.p', 'wb') as f:
-        pickle.dump(vectorizer2, f, pickle.HIGHEST_PROTOCOL)
+    # If using BOW(like) features, compute bigram counts and simplified POS tags counts.
+    if use_bow_features:
+        # Count bigrams.
+        vectorizer1 = CountVectorizer(min_df=2, ngram_range=(2, 2))
+        bigram_count = vectorizer1.fit_transform(messages_list).toarray()
+        feature_names.extend(['bigram-feature-' + str(idx) for idx in range(bigram_count.shape[1])])
+        data_mat_res = np.hstack((data_mat_res, bigram_count))
+        feature_subset_lengths.append(bigram_count.shape[1])
+        with open('../data/cached/repl/count_vectorizer.p', 'wb') as f:
+            pickle.dump(vectorizer1, f, pickle.HIGHEST_PROTOCOL)
 
+        # Get tf-idf results for POS tags (simplified).
+        vectorizer2 = TfidfVectorizer()
+        pos_tfidf = vectorizer2.fit_transform(messages_pos).toarray()
+        feature_names.extend(['pos-feature-' + str(idx) for idx in range(pos_tfidf.shape[1])])
+        data_mat_res = np.hstack((data_mat_res, pos_tfidf))
+        feature_subset_lengths.append(pos_tfidf.shape[1])
+        with open('../data/cached/repl/pos_tfidf_vectorizer.p', 'wb') as f:
+            pickle.dump(vectorizer2, f, pickle.HIGHEST_PROTOCOL)
+    
+    # Save feature names (for scoring).
+    with open('../data/cached/feature_names.txt', 'w') as f:
+        f.write('\n'.join(feature_names))
 
     # Save matrix of features and vector of target variables.
     np.save('../data/cached/data_' + category.replace('-', '_') + '.npy', data_mat_res)
@@ -532,13 +567,20 @@ def construct_features(data, category):
 
 if __name__ == '__main__':
     import os
+    import argparse
+
+    # Parse arguments.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--no-bow', action='store_true', help='Do not compute BOW-like features.')
+    args = parser.parse_args()
+
     DATA_PATH = '../data/data-processed/data.pkl'
     if os.path.isfile(DATA_PATH):
         with open(DATA_PATH, 'rb') as f:
             data = pickle.load(f)
         categories = ('book-relevance', 'type', 'category', 'category-broad')
         for category in categories:
-            construct_features(data, category)
+            construct_features(data, category, use_bow_features=not args.no_bow)
         print("Feature engineering successfully performed. You may now run the evaluate.py script.")
     else:
         print("Processed dataset not found. Run the parse.py script before running this script.")

@@ -1,0 +1,17 @@
+gboosting:
+general-feature-3: 0.2866
+general-feature-0: 0.1448
+general-feature-1: 0.1415
+general-feature-6: 0.1146
+general-feature-2: 0.0822
+general-feature-5: 0.0613
+repeated-letters: 0.0423
+general-feature-7: 0.0279
+clue-words: 0.0263
+given-names: 0.0194
+general-feature-4: 0.0185
+general-feature-8: 0.0162
+story-names: 0.0118
+curse-words: 0.0051
+chat-names: 0.0014
+
