@@ -1317,3 +1317,13 @@ gboosting: 0.7568313837829235
 Uniform classifier: 0.5105936182064136
 Majority classifier: 0.6085469881435507
 
+##########
+Date: 19/05/2020 08:27:51
+Category: book-relevance
+##########
+
+Evaluation method: cv
+gboosting: 0.7746350759926791
+Uniform classifier: 0.4980511657515716
+Majority classifier: 0.6085826370653299
+

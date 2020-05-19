@@ -5,7 +5,7 @@ import sys
 import pandas as pd
 from termcolor import colored
 
-from sklearn.model_selection import KFold, train_test_split, GridSearchCV
+from sklearn.model_selection import RepeatedKFold, train_test_split, GridSearchCV
 from sklearn.preprocessing import RobustScaler
 from sklearn.base import clone
 from sklearn import metrics
@@ -161,39 +161,51 @@ def evaluate(data, target, category, clf, eval_method, target_names):
     elif eval_method == 'cv':
         # If performing cross-validation.
 
-        # Set number of splits
+        # Set number of splits and repeats.
         N_SPLITS = 10
+        N_REPEATS = 10
 
-        # Initialize score accumulators.
-        score_cv_eval = 0
-        score_cv_baseline_majority = 0
-        score_cv_baseline_strat = 0
-        score_cv_baseline_prior = 0
-        score_cv_baseline_uniform = 0
+        # Initialize lists for scores.
+        score_cv_eval = np.empty(N_SPLITS*N_REPEATS, dtype=float)  
+        score_cv_baseline_majority = np.empty(N_SPLITS*N_REPEATS, dtype=float) 
+        score_cv_baseline_strat = np.empty(N_SPLITS*N_REPEATS, dtype=float) 
+        score_cv_baseline_prior = np.empty(N_SPLITS*N_REPEATS, dtype=float) 
+        score_cv_baseline_uniform = np.empty(N_SPLITS*N_REPEATS, dtype=float)
+
+        test_idxs = np.arange(data.shape[0])
+
 
         # Initialize fold index.
         idx = 0
-        for train_idx, test_idx in KFold(n_splits=N_SPLITS, shuffle=False).split(data, target):
+        for train_idx, test_idx in RepeatedKFold(n_splits=N_SPLITS, n_repeats=N_REPEATS).split(data, target, test_idxs):
 
             # Evaluate classifier.
-            score_cv_eval += clf_eval.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
+            score_cv_eval[idx] = clf_eval.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
 
             # Evaluate baseline classifiers.
-            score_cv_baseline_majority += clf_baseline_majority.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-            score_cv_baseline_strat += clf_baseline_strat.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-            score_cv_baseline_prior += clf_baseline_prior.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-            score_cv_baseline_uniform += clf_baseline_uniform.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
+            score_cv_baseline_majority[idx] = clf_baseline_majority.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
+            score_cv_baseline_strat[idx] = clf_baseline_strat.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
+            score_cv_baseline_prior[idx] = clf_baseline_prior.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
+            score_cv_baseline_uniform[idx] = clf_baseline_uniform.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
 
             # Increment fold index and print progress.
             idx += 1
-            print("done {0}/{1}".format(idx, N_SPLITS))
+            print("done {0}/{1}".format(idx, N_SPLITS*N_REPEATS))
+
 
         # Normalize scores.
-        res_eval = score_cv_eval / N_SPLITS
-        res_baseline_majority = score_cv_baseline_majority / N_SPLITS
-        res_baseline_strat = score_cv_baseline_strat / N_SPLITS
-        res_baseline_prior = score_cv_baseline_prior / N_SPLITS
-        res_baseline_uniform = score_cv_baseline_uniform / N_SPLITS
+        res_eval = np.sum(score_cv_eval) / (N_SPLITS*N_REPEATS)
+        res_baseline_majority = np.sum(score_cv_baseline_majority) / (N_SPLITS*N_REPEATS)
+        res_baseline_strat = np.sum(score_cv_baseline_strat) / (N_SPLITS*N_REPEATS)
+        res_baseline_prior = np.sum(score_cv_baseline_prior) / (N_SPLITS*N_REPEATS)
+        res_baseline_uniform = np.sum(score_cv_baseline_uniform) / (N_SPLITS*N_REPEATS)
+        
+        # Save CV results for each fold in each repetition (for Bayesian correlated t-test).
+        np.save('./evaluation/data/' + category + '_' + clf_eval['clf'].name + '.npy', score_cv_eval)
+        np.save('./evaluation/data/' + category + '_' + 'majority' + '.npy', score_cv_baseline_majority)
+        np.save('./evaluation/data/' + category + '_' + 'uniform' + '.npy', score_cv_baseline_uniform)
+        
+
 
         # Save results to file.
         save_results(category=category, kind='cv', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
