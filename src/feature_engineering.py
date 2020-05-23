@@ -2,12 +2,14 @@ import numpy as np
 import pickle
 import string
 import re
+import itertools
 import unidecode
 import slopos
+from emoji import UNICODE_EMOJI
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+import lemmagen
+from lemmagen.lemmatizer import Lemmatizer
 
-# TODO: how many times the user has replied in a row.
-# TODO: Number of replies in last N messages.
 
 def get_markov_model(target):
     """
@@ -78,26 +80,6 @@ def get_conditional_probabilities(target, n_look_back):
     return res
 
 
-def get_bow(corpus):
-    """
-    Get list of (sensible) words occuring in specified corpus.
-
-    Args:
-        corpus (list): Corpus of messages where each message is
-        represented as an entry in a list.
-
-    Returns:
-        (list): List containing the sensible words found in the
-        messages.
-    """
-    bow = set()
-    WORD_LEN_MAX = 15
-    for message in corpus:
-        words = map(lambda x: x.lower(), message.split(' '))
-        bow.update(filter(lambda x: len(x) < WORD_LEN_MAX, words)) 
-    return list(bow)
-
-
 def translate_nstd(message, dictionary):
     """
     Translate non-standard Slovene to standard slovene using data parsed
@@ -117,10 +99,13 @@ def translate_nstd(message, dictionary):
     res = []
 
     # Go over words. Remove punctuation first.
-    for w in message.translate(str.maketrans('', '', string.punctuation)).split(' '):
+    for w in message.translate(str.maketrans('', '', string.punctuation)).split():
+        
+        # Remove emojis and any repeated characters.
+        w_filt = ''.join(filter(lambda x: x not in UNICODE_EMOJI, ''.join(c[0] for c in itertools.groupby(w))))
 
         # Decode unicode and make lower-case.
-        dec = unidecode.unidecode(w).lower()
+        dec = unidecode.unidecode(w_filt).lower()
 
         # Try to translate next word.
         if dec in dictionary:
@@ -141,29 +126,13 @@ def get_pos_simple(message, dictionary):
         dictionary (dict): Dictionary mapping non-standard Slovene words
         to standard slovene words.
     """
-    translated = translate_nstd(message, dictionary)
+
+    # Remove emojis and any repeated letters.
+    message_filt = ''.join(filter(lambda x: x not in UNICODE_EMOJI and x not in string.punctuation, 
+        ''.join(c[0] for c in itertools.groupby(message))))
+    translated = translate_nstd(message_filt, dictionary)
     tagged = slopos.tag(translated)
     return ' '.join(map(lambda x: x[1][:2], tagged))
-
-
-def eval_bow(message, bow):
-    """
-    Get bag-of-words feature vector for message using specified list of words.
-    
-    Args:
-        message (str): message to convert to vector of features.
-        bow (list): List representing the bag-of-words.
-    
-    Returns (numpy.ndarray): bag-of-words vector.
-    """
-
-    # Evaluate message against bag of words model.
-    feat_vec = np.zeros(len(bow), dtype=int)
-    message_words = message.split(' ')
-    for idx, word in enumerate(bow):
-        if word in map(lambda x: x.lower(), message_words):
-            feat_vec[idx] += 1
-    return feat_vec
 
 
 def num_curse_words(message, curse_words):
@@ -325,6 +294,53 @@ def num_clues(message, clue_words):
     return np.array([count])
 
 
+def num_messages_in_row(user_id, user_id_history_map, idx):
+    """
+    Get number of messages in a row that the user
+    with specified user ID has made.
+
+    Args:
+        user_id (int): The user's ID
+        user_id_history_map (dict): Dictionary mapping
+        user ID's to arrays containing the value 1 at index where
+        the message with same index was made by user with that user ID.
+
+    Returns:
+        (int): Number of messages posted in a row by that user.
+    """
+
+    # Initialize counter.
+    count = 0
+
+    # Go over values in array in reverse and return when
+    # first zero value found.
+    for el in user_id_history_map[user_id][idx::-1]:
+        if el == 1:
+            count += 1
+        else:
+            return count
+    return np.array([count])
+
+
+def num_messages_last_n(user_id, user_id_history_map, idx, n=20):
+    """
+    Get number of messages in the last n messages posted
+    by user with specified user ID.
+
+    Args:
+        user_id (int): The user's ID
+        user_id_history_map (dict): Dictionary mapping
+        user ID's to arrays containing the value 1 at index where
+        the message with same index was made by user with that user ID.
+        n (int): Number of messages in the past to use.
+
+    Returns:
+        (int): Number of messages in the last n messages posted by that
+        user.
+    """
+    return np.array([np.sum(user_id_history_map[user_id][max(idx-n, 0):idx+1])])
+
+
 def get_general_features(message):
     """
     Compute basic features of message.
@@ -340,10 +356,10 @@ def get_general_features(message):
     res_vec = np.empty(9, dtype=float)
 
     # Number of words in text.
-    res_vec[0] = len(message.split(' '))
+    res_vec[0] = len(message.split())
     
     # Words lengths.
-    word_lengths = list(map(len, message.split(' ')))
+    word_lengths = list(map(len, message.split()))
     res_vec[1] = max(word_lengths)
     res_vec[2] = min(word_lengths)
     res_vec[3] = sum(word_lengths)/len(word_lengths)
@@ -377,11 +393,9 @@ def get_repl_processor():
     
     # Parse vectorizers and bag-of-words list.
     with open('../data/cached/repl/count_vectorizer.p', 'rb') as f1, \
-            open('../data/cached/repl/pos_tfidf_vectorizer.p', 'rb') as f2, \
-            open('../data/cached/repl/bow.p', 'rb') as f3:
+            open('../data/cached/repl/pos_tfidf_vectorizer.p', 'rb') as f2:
         vectorizer1 = pickle.load(f1)
         vectorizer2 = pickle.load(f2)
-        bow = pickle.load(f3)
     
     # Parse data dictionary.
     with open('../data/data-processed/data.pkl', 'rb') as f:
@@ -415,18 +429,20 @@ def get_repl_processor():
         given_names = num_given_names(message, data['names'])
         chat_names = num_chat_names(message, data['chat-names'])
         story_names = num_story_names(message, data['story-names'])
-        bow_features = eval_bow(message, bow)
+        messages_in_row_id = 0    # pre-set value
+        messages_in_last_n_id = 5 # pre-set value
         
         # Compute (simplified) POS tags.
         pos_tags = get_pos_simple(message, slo_nstd_dict)
         
         # Compute bigram counts and pos tags tf-idf scores.
-        bigram_count = vectorizer1.transform([message]).toarray()[0]
+        bow_count = vectorizer1.transform([message]).toarray()[0]
         pos_tfidf = vectorizer2.transform([message]).toarray()[0]
 
         # Construct features vector.
         feat_vec = np.hstack((general_features, curse_words, repeated_letters, clue_words, 
-            given_names, chat_names, story_names, bow_features, bigram_count, pos_tfidf))
+            given_names, chat_names, story_names, messages_in_row_id, messages_in_last_n_id, 
+            bow_count, pos_tfidf))
         
         # Return constructed feature.
         return feat_vec
@@ -446,11 +462,16 @@ def construct_features(data, category, use_bow_features=True):
         Valid values are 'book-relevance', 'type', 'category' and 'category-broad'
     """
     
-        
     # Get data.
     data_category = data[category]
     messages_list = data_category['x'].values.astype(str)
     target_vals = data_category['y'].values.astype(int)
+    user_ids = data['user-ids']
+
+    # Initialize dictionary of lists where each list contains a 1 at index corresponding
+    # to a message if the poster's user ID equals to key.
+    user_id_history_map = {user_id : np.zeros(len(messages_list), dtype=int) 
+            for user_id in np.unique(user_ids)}
 
     # Initialize matrix for features.
     data_mat_res = None
@@ -462,14 +483,6 @@ def construct_features(data, category, use_bow_features=True):
     # Load dictionary for non-standard Slovene.
     with open('../data/slo_nstd_dict.p', 'rb') as f:
         slo_nstd_dict = pickle.load(f)
-    
-    # If using BOW features, get bag-of-words list.
-    if use_bow_features:
-        bow = get_bow(data[category]['x'].values.astype(str))
-
-        # Save bag-of-words list.
-        with open('../data/cached/repl/bow.p', 'wb') as f:
-            pickle.dump(bow, f, pickle.HIGHEST_PROTOCOL)
     
     # Get list for storing POS tagged messages (simplified).
     messages_pos = []
@@ -487,16 +500,17 @@ def construct_features(data, category, use_bow_features=True):
     feature_names.append('given-names')
     feature_names.append('chat-names')
     feature_names.append('story-names')
+    feature_names.append('messages-in-a-row-id')
+    feature_names.append('last-n-id')
     
-    # If using BOW features, add to feature names.
-    if use_bow_features:
-        feature_names.extend(['bow-feature:{0}'.format(el) for el in bow])
-
     # Go over messages.
-    for idx, message in enumerate(messages_list):
+    for idx, (message, user_id) in enumerate(zip(messages_list[:10], user_ids[:10])):
 
         # Decode unicode and fix missing spaces after punctuation.
         message = re.sub(r'(?<=[.,])(?=[^\s])', r' ', message)
+
+        # Set value in post history for user posting the current message.
+        user_id_history_map[user_id][idx] = 1
 
         # Compute message features.
         general_features = get_general_features(message)
@@ -506,23 +520,19 @@ def construct_features(data, category, use_bow_features=True):
         given_names = num_given_names(message, data['names'])
         chat_names = num_chat_names(message, data['chat-names'])
         story_names = num_story_names(message, data['story-names'])
-
-        # If using BOW features, get bag-of-words feature vector.
-        if use_bow_features:
-            bow_features = eval_bow(message, bow)
-        else:
-            bow_features = np.array([])
+        messages_in_row_id = num_messages_in_row(user_id, user_id_history_map, idx)
+        messages_in_last_n_id = num_messages_last_n(user_id, user_id_history_map, idx=idx, n=20)
 
         # Append POS tagged (simplified) message to list.
         messages_pos.append(get_pos_simple(message, slo_nstd_dict))
 
         # Construct features vector.
-        feat_vec = np.hstack((general_features, curse_words, repeated_letters, clue_words, given_names, chat_names, story_names, bow_features))
+        feat_vec = np.hstack((general_features, curse_words, repeated_letters, clue_words, given_names, chat_names, story_names, messages_in_row_id, messages_in_last_n_id))
         
         # If getting feature subset lengths (first message).
         if get_feature_subset_lengths:
             feature_subset_lengths = [len(general_features), len(curse_words) + len(repeated_letters) +\
-                    len(clue_words) + len(given_names) + len(chat_names) + len(story_names), len(bow_features)]
+                    len(clue_words) + len(given_names) + len(chat_names) + len(story_names) + len(messages_in_row_id) + len(messages_in_last_n_id)]
             get_feature_subset_lengths = False
 
         # Add to matrix of features.
@@ -533,14 +543,27 @@ def construct_features(data, category, use_bow_features=True):
             data_mat_res = np.vstack((data_mat_res, feat_vec))
         print("Processed message {0}/{1}.".format(idx+1, len(messages_list)))
     
-    # If using BOW(like) features, compute bigram counts and simplified POS tags counts.
+    # If using BOW(like) features, compute unigram and bigram counts and simplified POS tags counts.
     if use_bow_features:
-        # Count bigrams.
-        vectorizer1 = CountVectorizer(min_df=2, ngram_range=(2, 2))
-        bigram_count = vectorizer1.fit_transform(messages_list).toarray()
-        feature_names.extend(['bigram-feature-' + str(idx) for idx in range(bigram_count.shape[1])])
-        data_mat_res = np.hstack((data_mat_res, bigram_count))
-        feature_subset_lengths.append(bigram_count.shape[1])
+
+        # Remove emoji and any punctuation.
+        messages_list_filt = [''.join(filter(lambda x: x not in UNICODE_EMOJI and x not in string.punctuation, message)) for message in messages_list]
+
+        # Remove repeated and lower-case characters.
+        messages_list_filt = [''.join(c[0] for c in itertools.groupby(message.lower())) for message in messages_list_filt]
+        
+        # Initialize lemmatizer and lemmatize.
+        lemmatizer = lemmagen.lemmatizer.Lemmatizer(dictionary=lemmagen.DICTIONARY_SLOVENE)
+        messages_list_filt_lemm = [' '.join([lemmatizer.lemmatize(word) for word in message.split()]) for message in messages_list_filt]
+
+        # Count unigrams and bigrams.
+        vectorizer1 = CountVectorizer(min_df=2, ngram_range=(1, 2))
+        bow_count = vectorizer1.fit_transform(messages_list_filt_lemm).toarray()
+        import pdb
+        pdb.set_trace()
+        feature_names.extend(['bow-feature-' + str(idx) for idx in range(bow_count.shape[1])])
+        data_mat_res = np.hstack((data_mat_res, bow_count))
+        feature_subset_lengths.append(bow_count.shape[1])
         with open('../data/cached/repl/count_vectorizer.p', 'wb') as f:
             pickle.dump(vectorizer1, f, pickle.HIGHEST_PROTOCOL)
 
@@ -552,7 +575,7 @@ def construct_features(data, category, use_bow_features=True):
         feature_subset_lengths.append(pos_tfidf.shape[1])
         with open('../data/cached/repl/pos_tfidf_vectorizer.p', 'wb') as f:
             pickle.dump(vectorizer2, f, pickle.HIGHEST_PROTOCOL)
-    
+   
     # Save feature names (for scoring).
     with open('../data/cached/feature_names.txt', 'w') as f:
         f.write('\n'.join(feature_names))
@@ -571,7 +594,7 @@ if __name__ == '__main__':
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no-bow', action='store_true', help='Do not compute BOW-like features.')
+    parser.add_argument('--no-bow', action='store_true', help='do not compute BOW-like features')
     args = parser.parse_args()
 
     DATA_PATH = '../data/data-processed/data.pkl'

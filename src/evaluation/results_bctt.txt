@@ -1,0 +1,6 @@
+#####
+Book relevance
+#####
+
+p(Stacking > Stacking2)=0.08940146905541879, p(EQ)=0.7482953717866604, p(Stacking2 > Stacking)=0.16230315915792082
+

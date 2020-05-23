@@ -56,12 +56,12 @@ if __name__ == '__main__':
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data1_path', type=str, required=True, help='Path to file containing CV results for first classifier')
-    parser.add_argument('--data2_path', type=str, required=True, help='Path to file containing CV results for second classifier')
-    parser.add_argument('--category', type=str, required=True, help='Category being predicted')
+    parser.add_argument('--data1_path', type=str, required=True, help='path to file containing CV results for first classifier')
+    parser.add_argument('--data2_path', type=str, required=True, help='path to file containing CV results for second classifier')
+    parser.add_argument('--category', type=str, required=True, help='prediction objective')
     parser.add_argument('--xlabel', type=str, required=True, help='x-axis label for the plot')
-    parser.add_argument('--name1', type=str, required=True, help='Name of first classifier')
-    parser.add_argument('--name2', type=str, required=True, help='Name of second classifier')
+    parser.add_argument('--name1', type=str, required=True, help='name of first classifier')
+    parser.add_argument('--name2', type=str, required=True, help='name of second classifier')
     args = parser.parse_args()
     
     # Load CV results (10 runs of 10-fold cross-validation).

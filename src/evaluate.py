@@ -45,17 +45,77 @@ def save_results(category, kind, accs=None, clf_reports=None, acc_names=None, cl
         f.write('Category: {0}\n'.format(category))
         f.write('##########\n\n')
         f.write('Evaluation method: {0}\n'.format(kind))
-        if accs:
+        if accs is not None:
             for idx, acc in enumerate(accs):
                 if acc_names:
                     f.write(acc_names[idx] + ': ')
                 f.write(str(acc) + '\n')
-        if clf_reports:
+        if clf_reports is not None:
             for idx, clf_report in enumerate(clf_reports):
                 if clf_reports_names:
                     f.write(clf_reports_names[idx] + ': \n')
-                f.write(clf_report)
+                f.write(clf_report + '\n\n')
         f.write('\n')
+
+
+def sum_cr(cr1, cr2):
+    """
+    Sum two classification reports presented in the form of dictionaries.
+
+    Args:
+        cr1 (dict): The first classifiation report
+        cr2 (dict): The second classifiation report
+
+    Returns:
+        (dict): Sum of the values in the two classification reports.
+    """
+
+    # If any classification report empty, return the other one.
+    if len(cr1) == 0:
+        return cr2
+    if len(cr2) == 0:
+        return cr1
+    
+    # Initialize resulting dictionary.
+    res = dict()
+
+    # Sum values.
+    for key in cr1.keys():
+        if key == 'accuracy':
+            res[key] = cr1[key] + cr2[key]
+        else:
+            res[key] = {key_in : cr1[key][key_in] + cr2[key][key_in] for key_in in cr1[key].keys()}
+
+    # Return result.
+    return res
+
+
+def normalize_cr(cr, val):
+    """
+    Normalize classification report presented in the form of a dictionary
+    by dividing each value with the specified value.
+    
+    Args:
+        cr (dict): The classification report to normalize
+        val (int): The value with which to normalize.
+
+    Returns:
+        (dict): Normalize classification report in the form of a dictionary.
+    """
+    
+    # Copy dictionary to avoid side-effects.
+    res = cr.copy()
+
+    # Go over values and normalize.
+    for key in res.keys():
+        if key == 'accuracy':
+            res[key] /= val
+        else:
+            for key_in in res[key].keys():
+                res[key][key_in] /= val
+    
+    # Return result.
+    return res
 
 
 def evaluate(data, target, category, clf, eval_method, target_names):
@@ -105,19 +165,24 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         # Get training and test data.
         data_train, data_test, target_train, target_test, _, idxs_test = train_test_split(data, target, data_ind, shuffle=False, test_size=0.1)
 
-        # Evaluate classifier.
-        res_pred = clf_eval.fit(data_train, target_train).predict(data_test)
-        res_eval = metrics.accuracy_score(res_pred, target_test)
+        # Compute evaluated classifier's predictions.
+        pred_eval = clf_eval.fit(data_train, target_train).predict(data_test)
+
+        # Compute baseline classifier's predictions.
+        pred_majority = clf_baseline_majority.fit(data_train, target_train).predict(data_test)
+        pred_strat = clf_baseline_strat.fit(data_train, target_train).predict(data_test)
+        pred_prior = clf_baseline_prior.fit(data_train, target_train).predict(data_test)
+        pred_uniform = clf_baseline_uniform.fit(data_train, target_train).predict(data_test)
         
         # If predicting book relevance (binary classification problem), write fp, fn, tp and tn
         # to file.
         if category == 'book-relevance':
 
             # Get indices of messages representing fp, fn, tp and tn.
-            idx_fail_fp = idxs_test[np.logical_and(res_pred == 1, target_test == 0)]
-            idx_fail_fn = idxs_test[np.logical_and(res_pred == 0, target_test == 1)]
-            idx_succ_tp = idxs_test[np.logical_and(res_pred == 0, target_test == 0)]
-            idx_succ_tn = idxs_test[np.logical_and(res_pred == 1, target_test == 1)]
+            idx_fail_fp = idxs_test[np.logical_and(pred_eval == 1, target_test == 0)]
+            idx_fail_fn = idxs_test[np.logical_and(pred_eval == 0, target_test == 1)]
+            idx_succ_tp = idxs_test[np.logical_and(pred_eval == 0, target_test == 0)]
+            idx_succ_tn = idxs_test[np.logical_and(pred_eval == 1, target_test == 1)]
             
             # Save fp, fn, tp and tn messages to results folder as .xlsx files.
             sheet_raw = pd.read_excel(discussions_path)
@@ -129,8 +194,8 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         else:
             
             # Get indices of messages representing fp, fn, tp and tn.
-            idx_fail = idxs_test[res_pred != target_test]
-            idx_succ = idxs_test[res_pred == target_test]
+            idx_fail = idxs_test[pred_eval != target_test]
+            idx_succ = idxs_test[pred_eval == target_test]
             
             # Save fp, fn, tp and tn messages to results folder as .xlsx files.
             sheet_raw = pd.read_excel(discussions_path)
@@ -138,23 +203,50 @@ def evaluate(data, target, category, clf, eval_method, target_names):
             tn = sheet_raw.loc[idx_succ, :].dropna(axis='columns').to_excel('../results/success_' + category.replace('-', '_') + '.xlsx') 
 
 
-        # Evaluate baseline classifiers.
-        res_baseline_majority = clf_baseline_majority.fit(data_train, target_train).score(data_test, target_test)
-        res_baseline_strat = clf_baseline_strat.fit(data_train, target_train).score(data_test, target_test)
-        res_baseline_prior = clf_baseline_prior.fit(data_train, target_train).score(data_test, target_test)
-        res_baseline_uniform = clf_baseline_uniform.fit(data_train, target_train).score(data_test, target_test)
+        # Produce classification report for evaluated classifier.
+        clf_report_eval = pd.DataFrame(metrics.classification_report(target_test, pred_eval, target_names=target_names, output_dict=True))
+        clf_report_eval['accuracy'][1:] = ''
+        cols = list(clf_report_eval.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_eval = clf_report_eval[cols]
+        
+        # Produce classification report for baseline majority classifier.
+        clf_report_baseline_majority = pd.DataFrame(metrics.classification_report(target_test, pred_majority, target_names=target_names, output_dict=True))
+        clf_report_baseline_majority['accuracy'][1:] = ''
+        cols = list(clf_report_baseline_majority.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_majority = clf_report_baseline_majority[cols]
+        
+        # Produce classification report for baseline stratified classifier.
+        clf_report_baseline_strat = pd.DataFrame(metrics.classification_report(target_test, pred_strat, target_names=target_names, output_dict=True))
+        clf_report_baseline_strat['accuracy'][1:] = ''
+        cols = list(clf_report_baseline_strat.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_strat = clf_report_baseline_strat[cols]
+        
+        # Produce classification report for baseline prior classifier.
+        clf_report_baseline_prior = pd.DataFrame(metrics.classification_report(target_test, pred_prior, target_names=target_names, output_dict=True))
+        clf_report_baseline_prior['accuracy'][1:] = ''
+        cols = list(clf_report_baseline_prior.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_prior = clf_report_baseline_prior[cols]
+        
+        # Produce classification report for baseline uniform classifier.
+        clf_report_baseline_uniform = pd.DataFrame(metrics.classification_report(target_test, pred_uniform, target_names=target_names, output_dict=True))
+        clf_report_baseline_uniform['accuracy'][1:] = ''
+        cols = list(clf_report_eval.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_uniform = clf_report_baseline_uniform[cols]
 
-        # Produce classification report.
-        clf_report_eval = metrics.classification_report(target_test, res_pred, target_names=target_names)
-        clf_report_baseline_majority = metrics.classification_report(target_test, clf_baseline_majority.predict(data_test), target_names=target_names)
-        clf_report_baseline_uniform = metrics.classification_report(target_test, clf_baseline_uniform.predict(data_test), target_names=target_names)
-
-        # Save results to file. 
-        # Save accuracies for evaluated model, uniform baseline model and majority baseline model.
-        # Save classification reports for evaluated model and uniform baseline model.
-        save_results(category=category, kind='tts', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
-                     clf_reports=[clf_report_eval, clf_report_baseline_uniform, clf_report_baseline_majority], 
-                     acc_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'],
+       
+        # Save classification reports for evaluated model, uniform baseline model and majority baseline model.
+        save_results(category=category, kind='tts', 
+                     clf_reports=[clf_report_eval.to_string(), clf_report_baseline_uniform.to_string(), clf_report_baseline_majority.to_string()], 
                      clf_reports_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
         
 
@@ -165,51 +257,105 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         N_SPLITS = 10
         N_REPEATS = 10
 
-        # Initialize lists for scores.
-        score_cv_eval = np.empty(N_SPLITS*N_REPEATS, dtype=float)  
-        score_cv_baseline_majority = np.empty(N_SPLITS*N_REPEATS, dtype=float) 
-        score_cv_baseline_strat = np.empty(N_SPLITS*N_REPEATS, dtype=float) 
-        score_cv_baseline_prior = np.empty(N_SPLITS*N_REPEATS, dtype=float) 
-        score_cv_baseline_uniform = np.empty(N_SPLITS*N_REPEATS, dtype=float)
+        # Initialize empty classification report values accumulator.
+        clf_report_eval_acc = dict()
+        clf_report_baseline_majority_acc = dict()
+        clf_report_baseline_strat_acc = dict()
+        clf_report_baseline_prior_acc = dict()
+        clf_report_baseline_uniform_acc = dict()
 
-        test_idxs = np.arange(data.shape[0])
-
+        # Initialize arrays for cv-fold results (for Bayesian correlated t-test).
+        scores_cv_eval = np.empty(N_SPLITS*N_REPEATS, dtype=float)
+        scores_cv_baseline_majority = np.empty(N_SPLITS*N_REPEATS, dtype=float)
+        scores_cv_baseline_uniform = np.empty(N_SPLITS*N_REPEATS, dtype=float)
 
         # Initialize fold index.
         idx = 0
-        for train_idx, test_idx in RepeatedKFold(n_splits=N_SPLITS, n_repeats=N_REPEATS).split(data, target, test_idxs):
+        for train_idx, test_idx in RepeatedKFold(n_splits=N_SPLITS, n_repeats=N_REPEATS).split(data, target):
 
             # Evaluate classifier.
-            score_cv_eval[idx] = clf_eval.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-
-            # Evaluate baseline classifiers.
-            score_cv_baseline_majority[idx] = clf_baseline_majority.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-            score_cv_baseline_strat[idx] = clf_baseline_strat.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-            score_cv_baseline_prior[idx] = clf_baseline_prior.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
-            score_cv_baseline_uniform[idx] = clf_baseline_uniform.fit(data[train_idx, :], target[train_idx]).score(data[test_idx, :], target[test_idx])
+            pred_eval = clf_eval.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_eval, output_dict=True)
+            scores_cv_eval[idx] = clf_report_nxt['accuracy']
+            clf_report_eval_acc = sum_cr(clf_report_eval_acc, clf_report_nxt)
+            
+            # Evaluate baseline majority classifier.
+            pred_majority = clf_baseline_majority.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_majority, output_dict=True)
+            scores_cv_baseline_majority[idx] = clf_report_nxt['accuracy']
+            clf_report_baseline_majority_acc = sum_cr(clf_report_baseline_majority_acc, clf_report_nxt)
+            
+            # Evaluate baseline stratified classifier.
+            pred_strat = clf_baseline_strat.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_strat, output_dict=True)
+            clf_report_baseline_strat_acc = sum_cr(clf_report_baseline_strat_acc, clf_report_nxt)
+            
+            # Evaluate baseline prior classifier.
+            pred_prior = clf_baseline_prior.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_prior, output_dict=True)
+            clf_report_baseline_prior_acc = sum_cr(clf_report_baseline_prior_acc, clf_report_nxt)
+            
+            # Evaluate baseline uniform classifier.
+            pred_uniform = clf_baseline_uniform.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_uniform, output_dict=True)
+            scores_cv_baseline_uniform[idx] = clf_report_nxt['accuracy']
+            clf_report_baseline_uniform_acc = sum_cr(clf_report_baseline_uniform_acc, clf_report_nxt)
+            
 
             # Increment fold index and print progress.
             idx += 1
             print("done {0}/{1}".format(idx, N_SPLITS*N_REPEATS))
-
-
-        # Normalize scores.
-        res_eval = np.sum(score_cv_eval) / (N_SPLITS*N_REPEATS)
-        res_baseline_majority = np.sum(score_cv_baseline_majority) / (N_SPLITS*N_REPEATS)
-        res_baseline_strat = np.sum(score_cv_baseline_strat) / (N_SPLITS*N_REPEATS)
-        res_baseline_prior = np.sum(score_cv_baseline_prior) / (N_SPLITS*N_REPEATS)
-        res_baseline_uniform = np.sum(score_cv_baseline_uniform) / (N_SPLITS*N_REPEATS)
+       
         
+        # Produce classification report for evaluated classifier.
+        clf_report_eval = pd.DataFrame(normalize_cr(clf_report_eval_acc, N_SPLITS*N_REPEATS))
+        clf_report_eval['accuracy'][1:] = ''
+        cols = list(clf_report_eval.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_eval = clf_report_eval[cols]
+
+        # Produce classification report for baseline majority classifier.
+        clf_report_baseline_majority = pd.DataFrame(normalize_cr(clf_report_baseline_majority_acc, N_SPLITS*N_REPEATS))
+        clf_report_baseline_majority['accuracy'][1:] = ''
+        cols = list(clf_report_baseline_majority.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_majority = clf_report_baseline_majority[cols]
+
+        # Produce classification report for baseline stratified classifier.
+        clf_report_baseline_strat = pd.DataFrame(normalize_cr(clf_report_baseline_strat_acc, N_SPLITS*N_REPEATS))
+        clf_report_baseline_strat['accuracy'][1:] = ''
+        cols = list(clf_report_baseline_strat.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_strat = clf_report_baseline_strat[cols]
+
+        # Produce classification report for baseline prior classifier.
+        clf_report_baseline_prior = pd.DataFrame(normalize_cr(clf_report_baseline_prior_acc, N_SPLITS*N_REPEATS))
+        clf_report_baseline_prior['accuracy'][1:] = ''
+        cols = list(clf_report_baseline_prior.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_prior = clf_report_baseline_prior[cols]
+
+        # Produce classification report for baseline uniform classifier.
+        clf_report_baseline_uniform = pd.DataFrame(normalize_cr(clf_report_baseline_uniform_acc, N_SPLITS*N_REPEATS))
+        clf_report_baseline_uniform['accuracy'][1:] = ''
+        cols = list(clf_report_eval.columns)
+        cols.remove('accuracy')
+        cols.append('accuracy')
+        clf_report_baseline_uniform = clf_report_baseline_uniform[cols]
+
         # Save CV results for each fold in each repetition (for Bayesian correlated t-test).
-        np.save('./evaluation/data/' + category + '_' + clf_eval['clf'].name + '.npy', score_cv_eval)
-        np.save('./evaluation/data/' + category + '_' + 'majority' + '.npy', score_cv_baseline_majority)
-        np.save('./evaluation/data/' + category + '_' + 'uniform' + '.npy', score_cv_baseline_uniform)
+        np.save('./evaluation/data/' + category + '_' + clf_eval['clf'].name + '.npy', scores_cv_eval)
+        np.save('./evaluation/data/' + category + '_' + 'majority' + '.npy', scores_cv_baseline_majority)
+        np.save('./evaluation/data/' + category + '_' + 'uniform' + '.npy', scores_cv_baseline_uniform)
         
-
-
-        # Save results to file.
-        save_results(category=category, kind='cv', accs=[res_eval, res_baseline_uniform, res_baseline_majority], 
-                     acc_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
+        # Save classification reports for evaluated model, uniform baseline model and majority baseline model.
+        save_results(category=category, kind='cv', 
+                     clf_reports=[clf_report_eval.to_string(), clf_report_baseline_uniform.to_string(), clf_report_baseline_majority.to_string()], 
+                     clf_reports_names=[clf_eval['clf'].name, 'Uniform classifier', 'Majority classifier'])
 
 
 def plot_roc(data, target, category, clf):
@@ -396,10 +542,14 @@ if __name__ == '__main__':
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument('--method', type=str, choices=['rf', 'svm', 'gboosting', 'logreg', 'stacking'], default='rf')
-    parser.add_argument('--eval-method', type=str, choices=['tts', 'cv'], default='tts')
-    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl', 'eval-features'], default='eval')
-    parser.add_argument('--category', type=str, choices=['book-relevance', 'type', 'category', 'category-broad'], default='book-relevance')
+    parser.add_argument('--method', type=str, choices=['rf', 'svm', 'gboosting', 'logreg', 'stacking'], default='rf', 
+            help='classification model to use')
+    parser.add_argument('--action', type=str, choices=['eval', 'roc', 'cm', 'repl', 'eval-features'], default='eval', 
+            help='action to perform')
+    parser.add_argument('--eval-method', type=str, choices=['tts', 'cv'], default='tts', 
+            help='use train-test split or cross-validation when performing evaluation')
+    parser.add_argument('--category', type=str, choices=['book-relevance', 'type', 'category', 'category-broad'], default='book-relevance', 
+            help='prediction objective')
     args = parser.parse_args()
     
     # Load data.
@@ -445,6 +595,7 @@ if __name__ == '__main__':
         else:
             raise(ValueError('The ROC curve functionality can only be used for book-relevance prediction'))
     elif args.action == 'cm':
+
         # Set title to use.
         if args.method == 'rf':
             title = 'Random Forest'

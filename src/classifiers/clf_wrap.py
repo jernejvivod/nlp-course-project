@@ -22,8 +22,9 @@ class ClfWrap(BaseEstimator, ClassifierMixin):
         alpha (float): Weight assigned to Markov model prediction.
         beta (float): Weight assigned to conditional probabilities' prediction.
     """
-
-    def __init__(self, clf, n_look_back=4, alpha=0.0, beta=0.0):
+    
+    def __init__(self, clf, n_look_back=4, alpha=0.06, beta=0.07):
+    # def __init__(self, clf, n_look_back=4, alpha=0.0, beta=0.0):
         self.clf = clf
         self.n_look_back = n_look_back
         self.alpha = alpha

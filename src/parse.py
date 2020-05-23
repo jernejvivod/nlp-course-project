@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import unidecode
 import glob
+import pickle
 from sklearn import preprocessing
 import argparse
 import urllib.request
@@ -68,25 +69,26 @@ def preprocess_for_target(data, category):
         category (str): Prediction target specification
 
     Returns:
-        (pandas.core.frame.DataFrame): Data with x (message) and y (target) columns.
+        (tuple): Data with x (message) and y (target) columns, array of user IDs corresponding to the
+        messages.
     """
-    
+
     if category == 'book-relevance':
         # Encode labels.
         data['Book relevance'] = preprocessing.LabelEncoder().fit_transform(data['Book relevance'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'Book relevance': 'y'})[['x', 'y']]
+        return data.rename(columns={'Message': 'x', 'Book relevance': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
     elif category == 'type':
         # Encode labels.
         data['Type'] = preprocessing.LabelEncoder().fit_transform(data['Type'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'Type': 'y'})[['x', 'y']]
+        return data.rename(columns={'Message': 'x', 'Type': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
     elif category == 'category':
         # Encode labels.
         data['Category'] = preprocessing.LabelEncoder().fit_transform(data['Category'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'Category': 'y'})[['x', 'y']]
+        return data.rename(columns={'Message': 'x', 'Category': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
     elif category == 'category-broad':
         # Encode labels.
         data['CategoryBroad'] = preprocessing.LabelEncoder().fit_transform(data['CategoryBroad'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'CategoryBroad': 'y'})[['x', 'y']]
+        return data.rename(columns={'Message': 'x', 'CategoryBroad': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
     else:
         raise(ValueError('unknown category specified'))
 
@@ -156,15 +158,14 @@ def initialize(discussions_path, stories_path, save_path):
         stories_path (str): Path to folder containing the stories.
     """
 
-    import pickle
 
     # Parse data from discussions and get data
     # for different prediction goals.
     data = parse_discussions_raw(discussions_path)
-    data_book_relevance = preprocess_for_target(data, 'book-relevance')
-    data_type = preprocess_for_target(data, 'type')
-    data_category = preprocess_for_target(data, 'category')
-    data_broad_category = preprocess_for_target(data, 'category-broad')
+    data_book_relevance, user_ids = preprocess_for_target(data, 'book-relevance')
+    data_type, _ = preprocess_for_target(data, 'type')
+    data_category, _ = preprocess_for_target(data, 'category')
+    data_broad_category, _ = preprocess_for_target(data, 'category-broad')
 
     # Parse stories.
     stories = parse_stories(stories_path)
@@ -187,6 +188,7 @@ def initialize(discussions_path, stories_path, save_path):
            'category-broad' : data_broad_category,
            'chat-names' : chat_names,
            'names' : names,
+           'user-ids' : user_ids,
            'curse-words' : curse_words,
            'story-names' : story_names,
            'clue-words' : clue_words,
@@ -202,10 +204,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     g1 = parser.add_argument_group(title='', description='')
     g2 = g1.add_mutually_exclusive_group(required=True)
-    g2.add_argument('--initialize', action='store_true', help='Initialize data dictionary. \
-            Run this after the script has bean run with the --parse argument and the resulting data manually checked.')
     g2.add_argument('--parse',action='store_true', help='Parse data from the web (names, list of curse words) and \
             chat names from discussions file. Run script with this argument before running with --initialize')
+    g2.add_argument('--initialize', action='store_true', help='Initialize data dictionary. \
+            Run this after the script has bean run with the --parse argument and the resulting data manually checked.')
     args = parser.parse_args()
     
     # Set path to file containing the discussions.
