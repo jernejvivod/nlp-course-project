@@ -81,10 +81,11 @@ def sum_cr(cr1, cr2):
 
     # Sum values.
     for key in cr1.keys():
-        if key == 'accuracy':
-            res[key] = cr1[key] + cr2[key]
-        else:
-            res[key] = {key_in : cr1[key][key_in] + cr2[key][key_in] for key_in in cr1[key].keys()}
+        if key in cr2.keys():
+            if key == 'accuracy':
+                res[key] = cr1[key] + cr2[key]
+            else:
+                res[key] = {key_in : cr1[key][key_in] + cr2[key][key_in] for key_in in cr1[key].keys()}
 
     # Return result.
     return res
@@ -165,6 +166,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         # Get training and test data.
         data_train, data_test, target_train, target_test, _, idxs_test = train_test_split(data, target, data_ind, shuffle=False, test_size=0.1)
 
+
         # Compute evaluated classifier's predictions.
         pred_eval = clf_eval.fit(data_train, target_train).predict(data_test)
 
@@ -204,7 +206,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
 
 
         # Produce classification report for evaluated classifier.
-        clf_report_eval = pd.DataFrame(metrics.classification_report(target_test, pred_eval, target_names=target_names, output_dict=True))
+        clf_report_eval = pd.DataFrame(metrics.classification_report(target_test, pred_eval, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True))
         clf_report_eval['accuracy'][1:] = ''
         cols = list(clf_report_eval.columns)
         cols.remove('accuracy')
@@ -212,7 +214,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         clf_report_eval = clf_report_eval[cols]
         
         # Produce classification report for baseline majority classifier.
-        clf_report_baseline_majority = pd.DataFrame(metrics.classification_report(target_test, pred_majority, target_names=target_names, output_dict=True))
+        clf_report_baseline_majority = pd.DataFrame(metrics.classification_report(target_test, pred_majority, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True))
         clf_report_baseline_majority['accuracy'][1:] = ''
         cols = list(clf_report_baseline_majority.columns)
         cols.remove('accuracy')
@@ -220,7 +222,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         clf_report_baseline_majority = clf_report_baseline_majority[cols]
         
         # Produce classification report for baseline stratified classifier.
-        clf_report_baseline_strat = pd.DataFrame(metrics.classification_report(target_test, pred_strat, target_names=target_names, output_dict=True))
+        clf_report_baseline_strat = pd.DataFrame(metrics.classification_report(target_test, pred_strat, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True))
         clf_report_baseline_strat['accuracy'][1:] = ''
         cols = list(clf_report_baseline_strat.columns)
         cols.remove('accuracy')
@@ -228,7 +230,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         clf_report_baseline_strat = clf_report_baseline_strat[cols]
         
         # Produce classification report for baseline prior classifier.
-        clf_report_baseline_prior = pd.DataFrame(metrics.classification_report(target_test, pred_prior, target_names=target_names, output_dict=True))
+        clf_report_baseline_prior = pd.DataFrame(metrics.classification_report(target_test, pred_prior, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True))
         clf_report_baseline_prior['accuracy'][1:] = ''
         cols = list(clf_report_baseline_prior.columns)
         cols.remove('accuracy')
@@ -236,7 +238,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         clf_report_baseline_prior = clf_report_baseline_prior[cols]
         
         # Produce classification report for baseline uniform classifier.
-        clf_report_baseline_uniform = pd.DataFrame(metrics.classification_report(target_test, pred_uniform, target_names=target_names, output_dict=True))
+        clf_report_baseline_uniform = pd.DataFrame(metrics.classification_report(target_test, pred_uniform, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True))
         clf_report_baseline_uniform['accuracy'][1:] = ''
         cols = list(clf_report_eval.columns)
         cols.remove('accuracy')
@@ -255,7 +257,7 @@ def evaluate(data, target, category, clf, eval_method, target_names):
 
         # Set number of splits and repeats.
         N_SPLITS = 10
-        N_REPEATS = 10
+        N_REPEATS = 1
 
         # Initialize empty classification report values accumulator.
         clf_report_eval_acc = dict()
@@ -275,30 +277,31 @@ def evaluate(data, target, category, clf, eval_method, target_names):
 
             # Evaluate classifier.
             pred_eval = clf_eval.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
-            clf_report_nxt = metrics.classification_report(target[test_idx], pred_eval, output_dict=True)
-            scores_cv_eval[idx] = clf_report_nxt['accuracy']
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_eval, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True)
+            # scores_cv_eval[idx] = clf_report_nxt['accuracy']
+            scores_cv_eval[idx] = metrics.accuracy_score(target[test_idx], pred_eval)
             clf_report_eval_acc = sum_cr(clf_report_eval_acc, clf_report_nxt)
             
             # Evaluate baseline majority classifier.
             pred_majority = clf_baseline_majority.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
-            clf_report_nxt = metrics.classification_report(target[test_idx], pred_majority, output_dict=True)
-            scores_cv_baseline_majority[idx] = clf_report_nxt['accuracy']
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_majority, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True)
+            scores_cv_baseline_majority[idx] = metrics.accuracy_score(target[test_idx], pred_majority)
             clf_report_baseline_majority_acc = sum_cr(clf_report_baseline_majority_acc, clf_report_nxt)
             
             # Evaluate baseline stratified classifier.
             pred_strat = clf_baseline_strat.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
-            clf_report_nxt = metrics.classification_report(target[test_idx], pred_strat, output_dict=True)
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_strat, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True)
             clf_report_baseline_strat_acc = sum_cr(clf_report_baseline_strat_acc, clf_report_nxt)
             
             # Evaluate baseline prior classifier.
             pred_prior = clf_baseline_prior.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
-            clf_report_nxt = metrics.classification_report(target[test_idx], pred_prior, output_dict=True)
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_prior, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True)
             clf_report_baseline_prior_acc = sum_cr(clf_report_baseline_prior_acc, clf_report_nxt)
             
             # Evaluate baseline uniform classifier.
             pred_uniform = clf_baseline_uniform.fit(data[train_idx, :], target[train_idx]).predict(data[test_idx, :])
-            clf_report_nxt = metrics.classification_report(target[test_idx], pred_uniform, output_dict=True)
-            scores_cv_baseline_uniform[idx] = clf_report_nxt['accuracy']
+            clf_report_nxt = metrics.classification_report(target[test_idx], pred_uniform, labels=np.arange(len(target_names)), target_names=target_names, output_dict=True)
+            scores_cv_baseline_uniform[idx] = metrics.accuracy_score(target[test_idx], pred_uniform)
             clf_report_baseline_uniform_acc = sum_cr(clf_report_baseline_uniform_acc, clf_report_nxt)
             
 
@@ -395,9 +398,9 @@ def plot_roc(data, target, category, clf):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('Receiver operating characteristic example')
+    # plt.title('ROC curve - ')
     plt.legend(loc="lower right")
-    plt.savefig('../results/plots/roc_' + category.replace('-', '_') + '.png')
+    plt.savefig('../results/plots/roc_' + category.replace('-', '_') + '_' + clf.name + '.eps')
     plt.clf()
     plt.close()
 
@@ -420,7 +423,7 @@ def confusion_matrix(data, target, category, clf, class_names, title):
     clf_eval = Pipeline([('scaling', RobustScaler()), ('clf', clf)])
 
     # Split data into training and test sets.
-    data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False)
+    data_train, data_test, target_train, target_test = train_test_split(data, target, shuffle=False, test_size=0.1)
 
     # Fit model.
     clf_eval.fit(data_train, target_train)
@@ -434,10 +437,10 @@ def confusion_matrix(data, target, category, clf, class_names, title):
                                  xticks_rotation='vertical')
 
     # UNCOMMENT TO SET TITLE.
-    disp.ax_.set_title("Normalized Confusion Matrix - " + title)
+    # disp.ax_.set_title("Normalized Confusion Matrix - " + title)
     disp.figure_.set_size_inches(9.0, 9.0, forward=True)
     plt.tight_layout()
-    plt.savefig('../results/plots/cfm_' + category + '.png')
+    plt.savefig('../results/plots/cfm_' + category + '_' + title.lower().replace(' ', '_') + '.eps')
     plt.clf()
     plt.close()
 
@@ -557,8 +560,9 @@ if __name__ == '__main__':
     target = np.load('../data/cached/target_' + args.category.replace('-', '_') + '.npy')
 
     # Load target names.
-    target_names = np.load('../data/cached/target-names/target_' + args.category.replace('-', '_') + '_names.npy', allow_pickle=True)
+    target_names = np.load('../data/cached/target_names/target_' + args.category.replace('-', '_') + '_names.npy', allow_pickle=True)
 
+    
     # Select classifier.
     if args.method == 'rf':
         clf = RandomForestClassifier(n_estimators=100)
@@ -573,7 +577,9 @@ if __name__ == '__main__':
         clf = ClfWrap(clf)
         clf.name = 'logreg'
     elif args.method == 'gboosting':
-        clf = GradientBoostingClassifier()
+        clf = GradientBoostingClassifier(objective='binary:logistic') if \
+                args.category == 'book-relevance' else \
+                GradientBoostingClassifier(objective='multi:softmax')
         clf = ClfWrap(clf)
         clf.name = 'gboosting'
     elif args.method == 'stacking':

@@ -25,7 +25,6 @@ class GradientBoostingClassifier(BaseEstimator, ClassifierMixin):
     """
 
     def __init__(self, params=None, objective='binary:logistic', n_rounds=500, num_class=-1):
-    # def __init__(self, params=None, objective='multi:softmax', n_rounds=500):
 
         # Set parameters.
         if params is None:

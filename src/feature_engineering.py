@@ -504,7 +504,7 @@ def construct_features(data, category, use_bow_features=True):
     feature_names.append('last-n-id')
     
     # Go over messages.
-    for idx, (message, user_id) in enumerate(zip(messages_list[:10], user_ids[:10])):
+    for idx, (message, user_id) in enumerate(zip(messages_list, user_ids)):
 
         # Decode unicode and fix missing spaces after punctuation.
         message = re.sub(r'(?<=[.,])(?=[^\s])', r' ', message)
@@ -559,8 +559,6 @@ def construct_features(data, category, use_bow_features=True):
         # Count unigrams and bigrams.
         vectorizer1 = CountVectorizer(min_df=2, ngram_range=(1, 2))
         bow_count = vectorizer1.fit_transform(messages_list_filt_lemm).toarray()
-        import pdb
-        pdb.set_trace()
         feature_names.extend(['bow-feature-' + str(idx) for idx in range(bow_count.shape[1])])
         data_mat_res = np.hstack((data_mat_res, bow_count))
         feature_subset_lengths.append(bow_count.shape[1])

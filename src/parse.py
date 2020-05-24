@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import re
 import unidecode
 import glob
@@ -75,20 +76,24 @@ def preprocess_for_target(data, category):
 
     if category == 'book-relevance':
         # Encode labels.
-        data['Book relevance'] = preprocessing.LabelEncoder().fit_transform(data['Book relevance'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'Book relevance': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
+        le = preprocessing.LabelEncoder()
+        data['Book relevance'] = le.fit_transform(data['Book relevance'].values.astype(str))
+        return data.rename(columns={'Message': 'x', 'Book relevance': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int), le.classes_
     elif category == 'type':
         # Encode labels.
-        data['Type'] = preprocessing.LabelEncoder().fit_transform(data['Type'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'Type': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
+        le = preprocessing.LabelEncoder()
+        data['Type'] = le.fit_transform(data['Type'].values.astype(str))
+        return data.rename(columns={'Message': 'x', 'Type': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int), le.classes_
     elif category == 'category':
         # Encode labels.
-        data['Category'] = preprocessing.LabelEncoder().fit_transform(data['Category'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'Category': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
+        le = preprocessing.LabelEncoder()
+        data['Category'] = le.fit_transform(data['Category'].values.astype(str))
+        return data.rename(columns={'Message': 'x', 'Category': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int), le.classes_
     elif category == 'category-broad':
         # Encode labels.
-        data['CategoryBroad'] = preprocessing.LabelEncoder().fit_transform(data['CategoryBroad'].values.astype(str))
-        return data.rename(columns={'Message': 'x', 'CategoryBroad': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int)
+        le = preprocessing.LabelEncoder()
+        data['CategoryBroad'] = le.fit_transform(data['CategoryBroad'].values.astype(str))
+        return data.rename(columns={'Message': 'x', 'CategoryBroad': 'y'})[['x', 'y']], data['User ID'].to_numpy().astype(int), le.classes_
     else:
         raise(ValueError('unknown category specified'))
 
@@ -162,10 +167,10 @@ def initialize(discussions_path, stories_path, save_path):
     # Parse data from discussions and get data
     # for different prediction goals.
     data = parse_discussions_raw(discussions_path)
-    data_book_relevance, user_ids = preprocess_for_target(data, 'book-relevance')
-    data_type, _ = preprocess_for_target(data, 'type')
-    data_category, _ = preprocess_for_target(data, 'category')
-    data_broad_category, _ = preprocess_for_target(data, 'category-broad')
+    data_book_relevance, user_ids, target_names_book_relevance = preprocess_for_target(data, 'book-relevance')
+    data_type, _, target_names_type = preprocess_for_target(data, 'type')
+    data_category, _, target_names_category = preprocess_for_target(data, 'category')
+    data_broad_category, _, target_names_category_broad = preprocess_for_target(data, 'category-broad')
 
     # Parse stories.
     stories = parse_stories(stories_path)
@@ -196,6 +201,12 @@ def initialize(discussions_path, stories_path, save_path):
 
     with open(save_path + 'data.pkl', 'wb') as f:
         pickle.dump(res, f)
+    
+    # Save target names (for results output).
+    np.save('../data/cached/target_names/target_book_relevance_names.npy', target_names_book_relevance)
+    np.save('../data/cached/target_names/target_type_names.npy', target_names_type)
+    np.save('../data/cached/target_names/target_category_names.npy', target_names_category)
+    np.save('../data/cached/target_names/target_category_broad_names.npy', target_names_category_broad)
     
 
 if __name__ == '__main__':

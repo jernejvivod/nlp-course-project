@@ -40,7 +40,7 @@ def make_test(data1, data2, name1, name2, xlabel, category, rope=0.01):
     # Set x-axis label.
     plt.xlabel(xlabel)
     plt.savefig('./plots/bctt_' + category.replace('-', '_') + '_' + \
-            name1.replace(' ', '_').lower() + '_' + name2.replace(' ', '_').lower() +  '.png')
+            name1.replace(' ', '_').lower() + '_' + name2.replace(' ', '_').lower() +  '.eps')
 
     # Save probabilities to file.
     with open('./results_bctt.txt', 'a') as f:

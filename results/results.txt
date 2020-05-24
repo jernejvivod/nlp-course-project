@@ -1,252 +1,112 @@
 ##########
-Date: 23/05/2020 00:32:33
-Category: book-relevance
+Date: 24/05/2020 16:39:49
+Category: type
 ##########
 
 Evaluation method: cv
 gboosting: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.876973    0.804594    0.840784      0.848953  0.849306
-precision    0.870453    0.815179    0.842816      0.849492          
-recall       0.884082    0.795381    0.839732      0.849306          
-support    215.500000  138.600000  354.100000    354.100000          
+                    A     Q      S   macro avg  weighted avg  accuracy
+f1-score     0.492030   0.0    0.0    0.164010      0.161461  0.326745
+precision    0.326745   0.0    0.0    0.108915      0.107368          
+recall       1.000000   0.0    0.0    0.333333      0.326745          
+support    115.700000  67.3  171.1  354.100000    354.100000          
 
 Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.546669    0.432274    0.489472      0.502599  0.496585
-precision    0.604320    0.386930    0.495625      0.520389          
-recall       0.499792    0.491050    0.495421      0.496585          
-support    215.500000  138.600000  354.100000    354.100000          
+                    A          Q           S   macro avg  weighted avg accuracy
+f1-score     0.340173   0.240651    0.394650    0.325158      0.348721  0.33756
+precision    0.335435   0.190832    0.484090    0.336786      0.381655         
+recall       0.346366   0.329695    0.334127    0.336729      0.337560         
+support    115.700000  67.300000  171.100000  354.100000    354.100000         
 
 Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756395    0.0    0.378198      0.460779  0.608587
-precision    0.608587    0.0    0.304294      0.370956          
-recall       1.000000    0.0    0.500000      0.608587          
-support    215.500000  138.6  354.100000    354.100000          
+               A     Q           S   macro avg  weighted avg  accuracy
+f1-score     0.0   0.0    0.651107    0.217036      0.315285  0.483196
+precision    0.0   0.0    0.483196    0.161065      0.234221          
+recall       0.0   0.0    1.000000    0.333333      0.483196          
+support    115.7  67.3  171.100000  354.100000    354.100000          
 
 
 ##########
-Date: 23/05/2020 01:43:15
+Date: 24/05/2020 19:34:05
 Category: book-relevance
+##########
+
+Evaluation method: tts
+stacking: 
+                   No         Yes   macro avg  weighted avg  accuracy
+f1-score     0.747967    0.866379    0.807173      0.823351  0.825352
+precision    0.786325    0.844538    0.815431      0.823384          
+recall       0.713178    0.889381    0.801279      0.825352          
+support    129.000000  226.000000  355.000000    355.000000          
+
+Uniform classifier: 
+                   No         Yes   macro avg  weighted avg  accuracy
+f1-score     0.420712    0.553616    0.487164      0.505321  0.495775
+precision    0.361111    0.634286    0.497698      0.535019          
+recall       0.503876    0.491150    0.497513      0.495775          
+support    129.000000  226.000000  355.000000    355.000000          
+
+Majority classifier: 
+                   No    Yes   macro avg  weighted avg accuracy
+f1-score     0.533058    0.0    0.266529      0.193703  0.36338
+precision    0.363380    0.0    0.181690      0.132045         
+recall       1.000000    0.0    0.500000      0.363380         
+support    129.000000  226.0  355.000000    355.000000         
+
+
+##########
+Date: 24/05/2020 20:27:47
+Category: type
 ##########
 
 Evaluation method: cv
 stacking: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.881301    0.817839    0.849570      0.856739  0.856565
-precision    0.885993    0.812817    0.849405      0.857883          
-recall       0.877294    0.824285    0.850790      0.856565          
-support    215.500000  138.600000  354.100000    354.100000          
+                    A          Q           S   macro avg  weighted avg  accuracy
+f1-score     0.718272   0.736958    0.784835    0.746688      0.754721  0.754584
+precision    0.707822   0.772720    0.784371    0.754971      0.758665          
+recall       0.734184   0.706342    0.787684    0.742737      0.754584          
+support    115.700000  67.300000  171.100000  354.100000    354.100000          
 
 Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.548302    0.438829    0.493566      0.506053  0.500082
-precision    0.608619    0.391506    0.500062      0.524647          
-recall       0.499557    0.500505    0.500031      0.500082          
-support    215.500000  138.600000  354.100000    354.100000          
+                    A          Q           S   macro avg  weighted avg  accuracy
+f1-score     0.321183   0.237389    0.380733    0.313102      0.334869  0.323923
+precision    0.320812   0.184435    0.472863    0.326036      0.369506          
+recall       0.322227   0.335934    0.319370    0.325843      0.323923          
+support    115.700000  67.300000  171.100000  354.100000    354.100000          
 
 Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756427    0.0    0.378213      0.460743  0.608585
-precision    0.608585    0.0    0.304292      0.370884          
-recall       1.000000    0.0    0.500000      0.608585          
-support    215.500000  138.6  354.100000    354.100000          
+               A     Q           S   macro avg  weighted avg  accuracy
+f1-score     0.0   0.0    0.651238    0.217079      0.315150  0.483194
+precision    0.0   0.0    0.483194    0.161065      0.233998          
+recall       0.0   0.0    1.000000    0.333333      0.483194          
+support    115.7  67.3  171.100000  354.100000    354.100000          
 
 
 ##########
-Date: 23/05/2020 02:40:34
-Category: book-relevance
-##########
-
-Evaluation method: cv
-rf: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.882470    0.808835    0.845652      0.853942  0.854788
-precision    0.866965    0.833873    0.850419      0.854745          
-recall       0.899039    0.786321    0.842680      0.854788          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.545058    0.441078    0.493068      0.505056  0.499098
-precision    0.608849    0.391940    0.500395      0.525390          
-recall       0.494492    0.506538    0.500515      0.499098          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756325    0.0    0.378163      0.460848  0.608586
-precision    0.608586    0.0    0.304293      0.371101          
-recall       1.000000    0.0    0.500000      0.608586          
-support    215.500000  138.6  354.100000    354.100000          
-
-
-##########
-Date: 23/05/2020 07:58:19
-Category: book-relevance
-##########
-
-Evaluation method: cv
-SVM: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.814792    0.712242    0.763517      0.775297  0.775203
-precision    0.815798    0.711927    0.763863      0.776364          
-recall       0.814480    0.713980    0.764230      0.775203          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.552744    0.439958    0.496351      0.509346  0.503359
-precision    0.611358    0.394314    0.502836      0.528067          
-recall       0.505739    0.500250    0.502994      0.503359          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756268    0.0    0.378134      0.460894  0.608581
-precision    0.608581    0.0    0.304291      0.371202          
-recall       1.000000    0.0    0.500000      0.608581          
-support    215.500000  138.6  354.100000    354.100000          
-
-
-##########
-Date: 23/05/2020 08:44:03
-Category: book-relevance
-##########
-
-Evaluation method: cv
-rf: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.792588    0.667884    0.730236      0.744270  0.745129
-precision    0.784251    0.681367    0.732809      0.745093          
-recall       0.802062    0.656894    0.729478      0.745129          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.552526    0.444395    0.498460      0.510810  0.504944
-precision    0.613849    0.396594    0.505221      0.530095          
-recall       0.503494    0.507498    0.505496      0.504944          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756368    0.0    0.378184      0.460807  0.608588
-precision    0.608588    0.0    0.304294      0.371013          
-recall       1.000000    0.0    0.500000      0.608588          
-support    215.500000  138.6  354.100000    354.100000          
-
-
-##########
-Date: 23/05/2020 08:54:19
-Category: book-relevance
-##########
-
-Evaluation method: cv
-SVM: 
-                    0           1   macro avg  weighted avg accuracy
-f1-score     0.798618    0.693483    0.746050      0.757990   0.7575
-precision    0.806137    0.685513    0.745825      0.759881         
-recall       0.792128    0.703449    0.747789      0.757500         
-support    215.500000  138.600000  354.100000    354.100000         
-
-Uniform classifier: 
-                   0           1   macro avg  weighted avg  accuracy
-f1-score     0.54816    0.441103    0.494632      0.506940  0.500989
-precision    0.60986    0.393072    0.501466      0.526282          
-recall       0.49875    0.504357    0.501554      0.500989          
-support    215.50000  138.600000  354.100000    354.100000          
-
-Majority classifier: 
-                    0      1  macro avg  weighted avg  accuracy
-f1-score     0.756360    0.0    0.37818      0.460802  0.608581
-precision    0.608581    0.0    0.30429      0.371009          
-recall       1.000000    0.0    0.50000      0.608581          
-support    215.500000  138.6  354.10000    354.100000          
-
-
-##########
-Date: 23/05/2020 09:07:41
-Category: book-relevance
-##########
-
-Evaluation method: cv
-SVM: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.825278    0.728029    0.776654      0.787772  0.787797
-precision    0.825657    0.728675    0.777166      0.788519          
-recall       0.825429    0.728545    0.776987      0.787797          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.546318    0.437463    0.491891      0.504468  0.498534
-precision    0.607271    0.390231    0.498751      0.523690          
-recall       0.497581    0.499780    0.498681      0.498534          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756346    0.0    0.378173      0.460830  0.608588
-precision    0.608588    0.0    0.304294      0.371062          
-recall       1.000000    0.0    0.500000      0.608588          
-support    215.500000  138.6  354.100000    354.100000          
-
-
-##########
-Date: 23/05/2020 09:08:09
-Category: book-relevance
-##########
-
-Evaluation method: cv
-rf: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.831402    0.733001    0.782201      0.793192  0.793671
-precision    0.826157    0.742264    0.784211      0.794112          
-recall       0.837593    0.725820    0.781707      0.793671          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.546812    0.436836    0.491824      0.504266  0.498309
-precision    0.606875    0.390044    0.498459      0.523025          
-recall       0.498513    0.498140    0.498326      0.498309          
-support    215.500000  138.600000  354.100000    354.100000          
-
-Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756422    0.0    0.378211      0.460744  0.608583
-precision    0.608583    0.0    0.304292      0.370888          
-recall       1.000000    0.0    0.500000      0.608583          
-support    215.500000  138.6  354.100000    354.100000          
-
-
-##########
-Date: 23/05/2020 10:17:57
-Category: book-relevance
+Date: 24/05/2020 21:53:46
+Category: category-broad
 ##########
 
 Evaluation method: cv
 stacking: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.882643    0.819476    0.851060      0.858280  0.858119
-precision    0.887554    0.813888    0.850721      0.859346          
-recall       0.878370    0.826398    0.852384      0.858119          
-support    215.500000  138.600000  354.100000    354.100000          
+                    C           D          I          M          O    S   macro avg  weighted avg  accuracy
+f1-score     0.691387    0.734672   0.635168   0.503421   0.459648  0.0    0.504049      0.664646  0.680049
+precision    0.631843    0.683337   0.894695   0.877637   0.858528  0.0    0.657673      0.705019          
+recall       0.766367    0.796276   0.495640   0.359941   0.321188  0.0    0.456569      0.680049          
+support    143.000000  119.700000  41.700000  17.700000  28.200000  3.8  354.100000    354.100000          
 
 Uniform classifier: 
-                    0           1   macro avg  weighted avg  accuracy
-f1-score     0.549407    0.440950    0.495178      0.507581  0.501691
-precision    0.610385    0.393396    0.501891      0.526697          
-recall       0.500559    0.503554    0.502057      0.501691          
-support    215.500000  138.600000  354.100000    354.100000          
+                    C           D          I          M          O         S   macro avg  weighted avg  accuracy
+f1-score     0.234771    0.201793   0.130670   0.070965   0.096479  0.016017    0.125116      0.190991  0.158995
+precision    0.389972    0.313500   0.109936   0.047916   0.071750  0.008765    0.156973      0.286816          
+recall       0.168606    0.149436   0.164563   0.141670   0.152182  0.125000    0.150243      0.158995          
+support    143.000000  119.700000  41.700000  17.700000  28.200000  3.800000  354.100000    354.100000          
 
 Majority classifier: 
-                    0      1   macro avg  weighted avg  accuracy
-f1-score     0.756374    0.0    0.378187      0.460802  0.608588
-precision    0.608588    0.0    0.304294      0.371001          
-recall       1.000000    0.0    0.500000      0.608588          
-support    215.500000  138.6  354.100000    354.100000          
+                    C      D     I     M     O    S   macro avg  weighted avg  accuracy
+f1-score     0.574729    0.0   0.0   0.0   0.0  0.0    0.095788      0.232954  0.403841
+precision    0.403841    0.0   0.0   0.0   0.0  0.0    0.067307      0.163900          
+recall       1.000000    0.0   0.0   0.0   0.0  0.0    0.166667      0.403841          
+support    143.000000  119.7  41.7  17.7  28.2  3.8  354.100000    354.100000          
 
 

@@ -1,1 +1,0 @@
-classification objective in Gradient boosting when selecting different categories

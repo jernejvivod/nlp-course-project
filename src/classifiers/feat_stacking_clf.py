@@ -81,7 +81,7 @@ class FeatureStackingClf(BaseEstimator, ClassifierMixin):
         for subset in data_subsets_train:
             pred_subs = np.empty((0, num_classes), dtype=int)
             for train_index, test_index in KFold(self.cv_num_folds).split(subset, y):
-                pred_nxt = self.l0_clf().fit(subset[train_index, :], y[train_index]).predict_proba(subset[test_index])
+                pred_nxt = self.l0_clf(max_iter=10000).fit(subset[train_index, :], y[train_index]).predict_proba(subset[test_index])
                 pred_subs = np.vstack((pred_subs, pred_nxt))
             pred_subs_all.append(pred_subs)
 
@@ -89,7 +89,7 @@ class FeatureStackingClf(BaseEstimator, ClassifierMixin):
         self.trained_l1 = self.l1_clf().fit(np.hstack(pred_subs_all), y)
 
         # Learn l0 classifiers for feature encoding.
-        self.encoding_l0 = [self.l0_clf().fit(subset, y) for subset in data_subsets_train]
+        self.encoding_l0 = [self.l0_clf(max_iter=10000).fit(subset, y) for subset in data_subsets_train]
         
         # Return reference to self.
         return self
