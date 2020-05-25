@@ -60,10 +60,12 @@ evaluation. To plot the ROC curve and compute the AUROC, use the **--action roc*
 
 After using cross evaluation to evaluate a model, the results for each fold in each run will be
 saved in the *results/bctt/data/* folder. The Bayesian correlated t-test can be used to compare pairs of models via their cross-validation scores. To perform the comparison, run the *bayesian_correlated_t_test.py* script in the *results/bctt/* folder. A number of arguments must be set to perform the
-comparison. Run the script with the *--help* argument to see the full list. An example use of the script to compare two models is shown below.
+comparison. Run the script with the **--help** argument to see the full list. An example use of the script to compare two models is shown below.
 
 ```console
-foo@bar:~$ python3 bayesian_correlated_t_test.py --data1_path ./data/book-relevance_rf.npy --data2_path ./data/book-relevance_stacking.npy --name1 'Random forest' --name2 'Feature stacking' --category 'Book relevance' --xlabel 'Random forest - Feature stacking'
+foo@bar:~$ python3 bayesian_correlated_t_test.py --data1_path ./data/book-relevance_rf.npy 
+--data2_path ./data/book-relevance_stacking.npy --name1 'Random forest' --name2 'Feature stacking' 
+--category 'Book relevance' --xlabel 'Random forest - Feature stacking'
 ```
 
 ## The REPL
