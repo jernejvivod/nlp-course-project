@@ -23,7 +23,7 @@ from the JANES project data repository. The dictionary is contained in the *slo\
 some words deemed to be important for successful classification using domain knowledge.
 
 To use this system, we must first parse the necessary data from the file containing the raw discussions as well as auxiliary data, such as the list of curse words and given names, from the web. 
-This can be done by running the **parse.py** script in the *src* directory with the **--parse** command-line argument.
+This can be done by running the **parse.py** script in the *src* directory with the **--parse** command-line argument. **NOTE: the repository already contains this data so this step can be skipped!**
 
 After running the **parse.py** script with the **--parse** command-line flag and inspecting the obtained curse words in the *curse\_words.txt* list as well as
 the obtained given names in the *names.txt* files, run the script **parse.py** again but this time with the ***--initialize*** command-line flag. This will
@@ -55,6 +55,16 @@ To perform feature scoring, run the **evaluate.py** script with the **--action e
 To plot the confusion matrix, use the **--action cm** option argument pair and specify the classification model and prediction objective in the same manner as when performing model
 evaluation. To plot the ROC curve and compute the AUROC, use the **--action roc** option argument. The plotting of the ROC curve is only defined for the book relevance prediction objective
 (binary classification problem).
+
+## Performing the Bayesian Correlated t-Test
+
+After using cross evaluation to evaluate a model, the results for each fold in each run will be
+saved in the *results/bctt/data/* folder. The Bayesian correlated t-test can be used to compare pairs of models via their cross-validation scores. To perform the comparison, run the *bayesian_correlated_t_test.py* script in the *results/bctt/* folder. A number of arguments must be set to perform the
+comparison. Run the script with the *--help* argument to see the full list. An example use of the script to compare two models is shown below.
+
+```console
+foo@bar:~$ python3 bayesian_correlated_t_test.py --data1_path ./data/book-relevance_rf.npy --data2_path ./data/book-relevance_stacking.npy --name1 'Random forest' --name2 'Feature stacking' --category 'Book relevance' --xlabel 'Random forest - Feature stacking'
+```
 
 ## The REPL
 

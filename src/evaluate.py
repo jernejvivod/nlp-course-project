@@ -166,7 +166,6 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         # Get training and test data.
         data_train, data_test, target_train, target_test, _, idxs_test = train_test_split(data, target, data_ind, shuffle=False, test_size=0.1)
 
-
         # Compute evaluated classifier's predictions.
         pred_eval = clf_eval.fit(data_train, target_train).predict(data_test)
 
@@ -351,9 +350,9 @@ def evaluate(data, target, category, clf, eval_method, target_names):
         clf_report_baseline_uniform = clf_report_baseline_uniform[cols]
 
         # Save CV results for each fold in each repetition (for Bayesian correlated t-test).
-        np.save('./evaluation/data/' + category + '_' + clf_eval['clf'].name + '.npy', scores_cv_eval)
-        np.save('./evaluation/data/' + category + '_' + 'majority' + '.npy', scores_cv_baseline_majority)
-        np.save('./evaluation/data/' + category + '_' + 'uniform' + '.npy', scores_cv_baseline_uniform)
+        np.save('../results/bctt/data/' + category + '_' + clf_eval['clf'].name + '.npy', scores_cv_eval)
+        np.save('../results/bctt/data/' + category + '_' + 'majority' + '.npy', scores_cv_baseline_majority)
+        np.save('../results/bctt/data/' + category + '_' + 'uniform' + '.npy', scores_cv_baseline_uniform)
         
         # Save classification reports for evaluated model, uniform baseline model and majority baseline model.
         save_results(category=category, kind='cv', 
@@ -398,6 +397,8 @@ def plot_roc(data, target, category, clf):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
+
+    # UNCOMMENT TO SET TITLE.
     # plt.title('ROC curve - ')
     plt.legend(loc="lower right")
     plt.savefig('../results/plots/roc_' + category.replace('-', '_') + '_' + clf.name + '.eps')
@@ -513,8 +514,8 @@ def repl(clf, data_train, target_train):
         res = clf.predict_proba(hist)[-1]
 
         # Print class probabilities.
-        print(colored('P(NO)={0}'.format(res[0], end=''), 'red'))
-        print(colored('P(YES)={0}'.format(res[1]), 'green'))
+        print(colored('P(NO)={0:.3f}'.format(res[0], end=''), 'red'))
+        print(colored('P(YES)={0:.3f}'.format(res[1]), 'green'))
         message = input('message: ')
 
 
@@ -561,7 +562,6 @@ if __name__ == '__main__':
 
     # Load target names.
     target_names = np.load('../data/cached/target_names/target_' + args.category.replace('-', '_') + '_names.npy', allow_pickle=True)
-
     
     # Select classifier.
     if args.method == 'rf':
@@ -579,7 +579,7 @@ if __name__ == '__main__':
     elif args.method == 'gboosting':
         clf = GradientBoostingClassifier(objective='binary:logistic') if \
                 args.category == 'book-relevance' else \
-                GradientBoostingClassifier(objective='multi:softmax')
+                GradientBoostingClassifier(objective='multi:softprob', num_class=len(np.unique(target)))
         clf = ClfWrap(clf)
         clf.name = 'gboosting'
     elif args.method == 'stacking':

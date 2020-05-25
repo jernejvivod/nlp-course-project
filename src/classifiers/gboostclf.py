@@ -24,7 +24,8 @@ class GradientBoostingClassifier(BaseEstimator, ClassifierMixin):
         num_class (int): Number of different classes if performing multi-class classification.
     """
 
-    def __init__(self, params=None, objective='binary:logistic', n_rounds=500, num_class=-1):
+    def __init__(self, params=None, objective='binary:logistic', n_rounds=100, num_class=-1):
+
 
         # Set parameters.
         if params is None:
@@ -36,6 +37,15 @@ class GradientBoostingClassifier(BaseEstimator, ClassifierMixin):
                     }
         else:
             self.params = params
+        
+        # Set number of classes if performing multi-label classification.
+        if self.params['objective'][:5] == 'multi':
+            if num_class == -1:
+                raise(ValueError('specify number of classes when performing multiclass classification'))
+            else:
+                self.params['num_class'] = num_class
+            
+
         
         # Set prediction objective.
         self.objective = objective
@@ -55,10 +65,6 @@ class GradientBoostingClassifier(BaseEstimator, ClassifierMixin):
         Returns:
             (obj): Reference to self
         """
-
-        # Set number of classes if doint multi-label classification.
-        if self.objective[:5] == 'multi':
-            self.params['num_class'] = len(np.unique(y))
         
         # Split training data into training and validation sets.
         data_train, data_val, target_train, target_val = train_test_split(X, y, test_size=0.2)
@@ -111,7 +117,7 @@ class GradientBoostingClassifier(BaseEstimator, ClassifierMixin):
         Returns:
             (numpy.ndarray): Predicted label probabilities
         """
-       
+        
         # Return probabilities of labels.
         if self.objective[:6] == 'binary':
             probs = self._gbm.predict(xgb.DMatrix(X))
