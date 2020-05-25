@@ -63,9 +63,7 @@ saved in the *results/bctt/data/* folder. The Bayesian correlated t-test can be 
 comparison. Run the script with the **--help** argument to see the full list. An example use of the script to compare two models is shown below.
 
 ```console
-foo@bar:~$ python3 bayesian_correlated_t_test.py --data1_path ./data/book-relevance_rf.npy 
---data2_path ./data/book-relevance_stacking.npy --name1 'Random forest' --name2 'Feature stacking' 
---category 'Book relevance' --xlabel 'Random forest - Feature stacking'
+foo@bar:~$ python3 bayesian_correlated_t_test.py --data1_path ./data/book-relevance_rf.npy --data2_path ./data/book-relevance_stacking.npy --name1 'Random forest' --name2 'Feature stacking' --category 'Book relevance' --xlabel 'Random forest - Feature stacking'
 ```
 
 ## The REPL
