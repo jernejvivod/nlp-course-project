@@ -66,6 +66,9 @@ comparison. Run the script with the **--help** argument to see the full list. An
 foo@bar:~$ python3 bayesian_correlated_t_test.py --data1_path ./data/book-relevance_rf.npy --data2_path ./data/book-relevance_stacking.npy --name1 'Random forest' --name2 'Feature stacking' --category 'Book relevance' --xlabel 'Random forest - Feature stacking'
 ```
 
+Upon successfull completion of the test, the estimated probabilities are saved to the *results_bctt.txt* file in the *results/bctt/* folder. The plot of the posterior distribution used to compute
+the probabilities is saved in the *results/bctt/plots* folder.
+
 ## The REPL
 
 The REPL functionality can be accessed by running the **evaluate.py** script with the ***--action repl*** command-line option argument pair. Additionally, the classification model can be.
